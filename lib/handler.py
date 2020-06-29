@@ -72,4 +72,3 @@ class Handler():
     def perturb_models(self):
         for cluster in self.clusters:
             cluster.perturb_models()
-
