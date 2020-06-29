@@ -70,6 +70,7 @@ hooker = P.HookPert()
 # net.fc3.register_forward_hook(hook_print_fwd)
 # net.fc3.register_backward_hook(hook_print_bwd)
 # net.fc1.register_forward_hook(hooker)
+
 hook_all_fwd(net, hook_print_fwd)
 hook_all_bwd(net, hook_print_bwd)
 hook_all_fwd(net, hooker.perturb)

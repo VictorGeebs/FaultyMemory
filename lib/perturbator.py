@@ -85,6 +85,8 @@ class Gauss(Perturbator):
     def __init__(self, p=1, mu=0, sigma=1):
         super(Gauss, self).__init__()
         self.p = p
+        self.mu = mu
+        self.sigma = sigma
 
     def __str__(self): # Add mean and std dev to print
         return "Gaussian Perturb"
@@ -95,7 +97,7 @@ class Gauss(Perturbator):
             param = param.flatten()
             for i, value in enumerate(param.data):
                 if (random.random() <= self.p):
-                    param.data[i] += random.gauss * param.data[i]
+                    param.data[i] += random.gauss(self.mu, self.sigma) * param.data[i]
             param = param.view(param_shape)
 
 class HookPert(Perturbator): # TESTING CLASS, NOT YET A BASE
@@ -104,4 +106,15 @@ class HookPert(Perturbator): # TESTING CLASS, NOT YET A BASE
         self.p = p
 
     def perturb(self, model, inp, out):
-        return out*2
+        return out*3
+
+class ActivationPerturbation():
+    def __init__(self, p=1.):
+        assert (p >= 0. and p <= 1.), "probability p must be between 0 and 1"
+        self.p = p
+    
+    def __call__(self, model, inp, out):
+        return self.perturb(model, inp, out)
+
+    def perturb(self, model, inp, out):
+        pass
