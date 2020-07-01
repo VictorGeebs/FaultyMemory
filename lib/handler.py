@@ -12,63 +12,64 @@ class Handler():
     def __init__(self, net, clusters=None):
         self.net = net
         self.clusters = clusters if clusters is not None else []
-        self.models = list(self.net.children())
+        self.modules = list(self.net.children())
 
     def __str__(self):
-        for model in self.models:
-            print(list(model.named_parameters()))
+        print("Handler: ")
+        for cluster in self.clusters:
+            print(cluster)
         return ''
 
     def forward(self, x):
         r"""
-        Saves every model, then perturbs every model by cluster, and then makes the forward pass
+        Saves every module, then perturbs every module by cluster, and then makes the forward pass
         """
-        self.save_models()
-        self.perturb_models()
+        self.save_modules()
+        self.perturb_modules()
         return self.net.forward(x)
 
-    def restore_models(self):
+    def restore_modules(self):
         r"""
-        Copies the models' saved parameters back to the normal weights to allow for backpropagation
+        Copies the modules' saved parameters back to the normal weights to allow for backpropagation
         """
-        for model in self.models:
-            model.restore_models()
+        for cluster in self.clusters:
+            cluster.restore_tensors()
 
-    def init_clusters(self, clusters=None, models=None): # TODO: SPAGHETTI
+    def init_clusters(self, clusters=None, modules=None): # TODO: SPAGHETTI
         """
-        Assigns models to specified clusters.\n
-        Clusters should contain the list of clusters you wish to assign models to.\n
-        Models should be a list of lists of models, the first list being the models to assign to clusters[0] and so on.\n
-        The list of models in models[i] will be assigned to clusters[i].\n
-        If no models or clusters are specified, it will split all models in order and distribute them across all clusters in the handler equally.
+        Assigns modules to specified clusters.\n
+        Clusters should contain the list of clusters you wish to assign modules to.\n
+        Modules should be a list of lists of modules, the first list being the modules to assign to clusters[0] and so on.\n
+        The list of modules in modules[i] will be assigned to clusters[i].\n
+        If no modules or clusters are specified, it will split all modules in order and distribute them across all clusters in the handler equally.
         """
-        if models is None:
+        if modules is None:
             if clusters is None:
                 clusters = self.clusters   
-            models = list(self.net.children())
+            modules = list(self.net.children())
             nb_clust = len(clusters)
-            nb_models = len(models)
-            n = math.ceil(nb_models/nb_clust)
-            groups = [models[i:i + n] for i in range(0, len(models), n)]  # Splitting the modules in equal groups according to nb of clusters and nb of models
-            models = groups
+            nb_modules = len(modules)
+            n = math.ceil(nb_modules/nb_clust)
+            groups = [modules[i:i + n] for i in range(0, len(modules), n)]  # Splitting the modules in equal groups according to nb of clusters and nb of modules
+            modules = groups
 
         for i, cluster in enumerate(clusters):
-            for model in models[i]:  # Watch out for out of bounds error
-                cluster.add_model(model)
+            for module in modules[i]:  # Watch out for out of bounds error
+                cluster.add_module(module)
         
-    def move_model(self, destination_cluster, model): # Add index cluster option?
+    def move_module(self, destination_cluster, module): # Add index cluster option?
         """
-        Moves a model from its cluster to the destination cluster
+        Moves a module from its cluster to the destination cluster
         """
         for cluster in self.clusters:
-            if cluster.contains(model):
-                cluster.remove_model(model)
-        destination_cluster.add_model(model)
+            if cluster.contains(module):
+                cluster.remove_module(module)
+        destination_cluster.add_module(module)
 
-    def save_models(self):
-        for model in self.models:
-            model.save_model()
-
-    def perturb_models(self):
+    def save_modules(self):
         for cluster in self.clusters:
-            cluster.perturb_models()
+            cluster.save_tensors()
+
+    def perturb_modules(self):
+        for cluster in self.clusters:
+            cluster.perturb_tensors()

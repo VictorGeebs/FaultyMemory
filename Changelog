@@ -1,0 +1,21 @@
+# Changelog
+All notable changes to this project will be documented in this file.
+
+## [0.1.0] - 2020-07-01
+### Added
+- Clusters are now in charge of storing the saved and perturbed tensors.
+- Tensors can now be added to clusters independently of which module they belong to
+- Tensors can be batch-added and batch-removed by module with cluster.add_module() and remove_module()
+- Default initializer for clusters and modules in the handler with handler.init_clusters()
+
+### Changed
+- All occurences of "model" changed to "module" in non-deprecated classes corrected for consistency
+- Cluster's perturb_module and save_module changed to perturb_tensors and save_tensors to better represent the action
+- Minor format change of the TODO list
+
+### Deprecated
+- Wrappers are now deprecated since memory management is done through the clusters themselves
+- the Cluster class is now deprecated, being replaced with TensorCluster. This is temporary and the name TensorCluster will change back to Cluster once Cluster is removed
+
+### Fixed
+- Minor formating issue when printing out classes 
