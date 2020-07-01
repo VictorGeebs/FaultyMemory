@@ -6,6 +6,9 @@ import numpy as np
 import perturbator as P
 
 class Wrapper(nn.Module):
+    """
+    Deprecated
+    """
     def __init__(self, module):
         super(Wrapper, self).__init__()
         self.mod = module
@@ -39,6 +42,7 @@ class Wrapper(nn.Module):
 
 def Wrap(module):
     """
+    DEPRECATED
     Applies a wrapper to every child in the model. 
     \n NOTE: This could prove to be dangerous as the setattr() method is being used and changes the model itself instead of returning a changed copy.
     \n Possible Fix: use copy.deepcopy() on the model beforehand and returning that changed copy.

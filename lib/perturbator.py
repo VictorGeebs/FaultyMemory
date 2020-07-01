@@ -11,7 +11,7 @@ class Perturbator():
         assert (p >= 0. and p <= 1.), "probability p must be between 0 and 1"
         self.p = p
 
-    def __call__(self, params): # Make flexible for calling with hooks or with only a tensor? __call__(self, params=None, model=None, in=None, out=None) Naming gets out of wack
+    def __call__(self, params): # Make flexible for calling with hooks or with only a tensor? __call__(self, params=None, module=None, in=None, out=None) Naming gets out of wack
         self.perturb(params)
 
     def __str__(self):
@@ -105,7 +105,7 @@ class HookPert(Perturbator): # TESTING CLASS, NOT YET A BASE
         super(HookPert, self).__init__()
         self.p = p
 
-    def perturb(self, model, inp, out):
+    def perturb(self, module, inp, out):
         return out*3
 
 class ActivationPerturbation():
@@ -113,8 +113,8 @@ class ActivationPerturbation():
         assert (p >= 0. and p <= 1.), "probability p must be between 0 and 1"
         self.p = p
     
-    def __call__(self, model, inp, out):
-        return self.perturb(model, inp, out)
+    def __call__(self, module, inp, out):
+        return self.perturb(module, inp, out)
 
-    def perturb(self, model, inp, out):
+    def perturb(self, module, inp, out):
         pass
