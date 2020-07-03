@@ -18,4 +18,19 @@ All notable changes to this project will be documented in this file.
 - the Cluster class is now deprecated, being replaced with TensorCluster. This is temporary and the name TensorCluster will change back to Cluster once Cluster is removed
 
 ### Fixed
-- Minor formating issue when printing out classes 
+- Minor formating issue when printing out classes
+
+
+
+## [0.1.1] - 2020-07-02
+### Added
+- Clusters now handle hooking for activations themselves
+- There is no longer a differentiation between Perturbations for only tensors or activations
+- Handler access for the new cluster activation functions 
+
+### Changed
+- The old "TensorCluster" class is now called "Cluster" with the removal of the old Cluster class
+
+### Removed
+- Wrappers have been removed
+- Activation Perturbations have been removed, they are now all simply Perturbations
