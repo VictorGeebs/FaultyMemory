@@ -29,6 +29,10 @@ class Perturbator():
         """
         pass
 
+    def hook(self, module, inp, out):
+        return self.perturb(out)
+
+
 
 class Zeros(Perturbator):
     def __init__(self, p=1):
@@ -42,7 +46,7 @@ class Zeros(Perturbator):
         for param in list(params):
             param_shape = param.shape
             param = param.flatten()
-            for i, value in enumerate(param.data):
+            for i, _ in enumerate(param.data):
                 if (random.random() <= self.p):
                     param.data[i] = 0
             param = param.view(param_shape)
@@ -59,7 +63,7 @@ class Ones(Perturbator):
         for param in list(params):
             param_shape = param.shape
             param = param.flatten()
-            for i, value in enumerate(param.data):
+            for i, _ in enumerate(param.data):
                 if (random.random() <= self.p):
                     param.data[i] = 1
             param = param.view(param_shape)
@@ -76,7 +80,7 @@ class Twos(Perturbator):
         for param in list(params):
             param_shape = param.shape
             param = param.flatten()
-            for i, value in enumerate(param.data):
+            for i, _ in enumerate(param.data):
                 if (random.random() <= self.p):
                     param.data[i] = 2
             param = param.view(param_shape)
@@ -95,26 +99,7 @@ class Gauss(Perturbator):
         for param in list(params):
             param_shape = param.shape
             param = param.flatten()
-            for i, value in enumerate(param.data):
+            for i, _ in enumerate(param.data):
                 if (random.random() <= self.p):
                     param.data[i] += random.gauss(self.mu, self.sigma) * param.data[i]
             param = param.view(param_shape)
-
-class HookPert(Perturbator): # TESTING CLASS, NOT YET A BASE
-    def __init__(self, p=1):
-        super(HookPert, self).__init__()
-        self.p = p
-
-    def perturb(self, module, inp, out):
-        return out*3
-
-class ActivationPerturbation():
-    def __init__(self, p=1.):
-        assert (p >= 0. and p <= 1.), "probability p must be between 0 and 1"
-        self.p = p
-    
-    def __call__(self, module, inp, out):
-        return self.perturb(module, inp, out)
-
-    def perturb(self, module, inp, out):
-        pass

@@ -12,6 +12,22 @@ import cluster as C
 import handler as H
 #import hooks as hooks
 
+def hook_all_fwd(model, hook_fn):
+    hooks = {}
+    for name, module in model.named_modules():
+        hooks[name] = module.register_forward_hook(hook_fn)
+
+def hook_print_fwd(model, inp, out):
+    print('')
+    print('')
+    print(model)
+    #print(list(model.named_parameters()))
+    print("------------Fwd------------")
+    print("Input Activations")
+    print(inp)
+    print("Calculated Output")
+    print(out)
+
 class SimpleNet(nn.Module):
     def __init__(self):
         super(SimpleNet, self).__init__()
@@ -54,19 +70,20 @@ print(modules)
 named_params = net.named_parameters()
 params = list(net.parameters())
 
-pert1 = P.Zeros(1)
-pert2 = P.Ones(0.5)
-c1 = C.TensorCluster(perturb=[pert1])
-c2 = C.TensorCluster(perturb=[pert2])
+pert1 = P.Ones(1)
+pert2 = P.Twos(1)
+c1 = C.Cluster(perturb=[pert1], activations=[modules[0], modules[2]])
+c2 = C.Cluster(perturb=[pert2], activations=[modules[1]])
 clusters = [c1, c2]
 handler = H.Handler(net, clusters)
-
 handler.init_clusters()
+#print(handler)
+hook_all_fwd(net, hook_print_fwd)
+handler.move_activation(c2, modules[2])
 
-inp = torch.tensor([1.])
-print(inp)
+
+
+inp = torch.Tensor([1.])
 out = handler.forward(inp)
+print("")
 print(out)
-print(handler)
-handler.restore_modules()
-print(handler)

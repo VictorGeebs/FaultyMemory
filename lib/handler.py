@@ -6,7 +6,6 @@ import math
 import numpy as np
 import perturbator as P
 import cluster as C
-import wrapper as W
 
 class Handler():
     def __init__(self, net, clusters=None):
@@ -57,14 +56,27 @@ class Handler():
             for module in modules[i]:  # Watch out for out of bounds error
                 cluster.add_module(module)
         
-    def move_module(self, destination_cluster, module): # Add index cluster option?
+    def move_tensor(self, destination_cluster, tensor):
+        """
+        Moves a tensor from its cluster to the destination cluster
+        """
+        for cluster in self.clusters:
+            if cluster.contains(tensor):
+                cluster.remove_tensor(tensor)
+        destination_cluster.add_tensor(tensor)
+
+    def move_module(self, destination_cluster, module):
         """
         Moves a module from its cluster to the destination cluster
         """
         for cluster in self.clusters:
-            if cluster.contains(module):
-                cluster.remove_module(module)
+            cluster.remove_module(module)
         destination_cluster.add_module(module)
+
+    def move_activation(self, destination_cluster, module):
+        for cluster in self.clusters:
+            cluster.remove_activation(module)
+        destination_cluster.add_activation(module)
 
     def save_modules(self):
         for cluster in self.clusters:
@@ -73,3 +85,7 @@ class Handler():
     def perturb_modules(self):
         for cluster in self.clusters:
             cluster.perturb_tensors()
+
+    def apply_hooks(self):
+        for cluster in self.clusters:
+            cluster.apply_hooks()

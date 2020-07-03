@@ -1,3 +1,3 @@
 - [X] Re-write architecture: with a per-tensor access, there is no longer a use for layer wrappers. The clusters can save the correct parameters themselves.
-- [ ] Distinguish Clusters from activation perturbations -> if clusters only represent memory and contain tensors, it doesnt make sense they perturb activations of layers as a whole. 
+- [X] Distinguish Clusters from activation perturbations -> if clusters only represent memory and contain tensors, it doesnt make sense they perturb activations of layers as a whole. 
 - [ ] Implement a Json/UI loader to save configurations and assign tensors and modules more easily
