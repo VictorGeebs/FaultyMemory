@@ -50,7 +50,25 @@ class Zeros(Perturbator):
                 if (random.random() <= self.p):
                     param.data[i] = 0
             param = param.view(param_shape)
-            
+
+class SignInvert(Perturbator):
+    def __init__(self, p=1):
+        super(Zeros, self).__init__()
+        self.p = p
+
+    def __str__(self):
+        return "Zero Perturb"
+
+    def perturb(self, params):
+        for param in list(params):
+            param_shape = param.shape
+            param = param.flatten()
+            for i, _ in enumerate(param.data):
+                if (random.random() <= self.p):
+                    param.data[i] *= -1
+            param = param.view(param_shape)
+ 
+
 class Ones(Perturbator):
     def __init__(self, p=1):
         super(Ones, self).__init__()
