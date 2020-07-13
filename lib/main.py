@@ -10,7 +10,6 @@ import numpy as np
 import perturbator as P
 import cluster as C
 import handler as H
-#import hooks as hooks
 
 def hook_all_fwd(model, hook_fn):
     hooks = {}
@@ -66,6 +65,12 @@ net = SimpleNet()
 
 #Init the handler and clusters
 modules = list(net.children())
+mmodules = list(modules[0].modules())
+print(modules)
+print(mmodules)
+print(list(mmodules[1].modules()))
+
+'''
 print(modules)
 named_params = net.named_parameters()
 params = list(net.parameters())
@@ -87,3 +92,4 @@ inp = torch.Tensor([1.])
 out = handler.forward(inp)
 print("")
 print(out)
+'''

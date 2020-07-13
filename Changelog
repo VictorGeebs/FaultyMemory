@@ -34,3 +34,12 @@ All notable changes to this project will be documented in this file.
 ### Removed
 - Wrappers have been removed
 - Activation Perturbations have been removed, they are now all simply Perturbations
+
+## [0.1.2] - 2020-07-13
+### Added
+- Handler can now be initialized with activations to perturb and entire networks to simplify the init process
+- Handler can now be __call__(x) to use it like a network's forward(x)
+- Utility functions have been added to train, test and generate test data for networks
+- The train.py file can be used as a template to train new networks quickly
+- The models folder has been added to contain trained models for testing perturbations or algorithms
+- Sign bit inverter perturbation added 

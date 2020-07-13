@@ -19,6 +19,9 @@ class Handler():
             print(cluster)
         return ''
 
+    def __call__(self, x):
+        return self.forward(x)
+
     def forward(self, x):
         r"""
         Saves every module, then perturbs every module by cluster, and then makes the forward pass

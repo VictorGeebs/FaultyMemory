@@ -10,12 +10,20 @@ class Cluster():
     """
     A faulty memory cluster that stores a collection of tensors to perturb them during the forward pass
     """
-    def __init__(self, perturb=None, tensors=None, activations=None):
+    def __init__(self, perturb=None, tensors=None, activations=None, networks=None, network_activations=None):
         self.perturb = perturb if perturb is not None else []
         self.tensors = tensors if tensors is not None else []
-        self.activations = activations if activations is not None else []
+        self.saved_tensors = None
+        self.activations = activations if activations is not None else []      
         self.hooks = {}
         self.save_tensors()
+
+        if networks is not None:
+            for net in networks:
+                self.add_module(net)
+        if network_activations is not None:
+            for net in network_activations:
+                self.add_network_activation(net)
         self.apply_hooks()
 
     def __str__(self):
@@ -95,6 +103,14 @@ class Cluster():
             if mod is module:
                 self.clear_hook(module)
                 self.activations.pop(i)
+
+    def add_network_activation(self, module):
+        for mod in module.children():
+            self.add_activation(mod)
+
+    def remove_network_activation(self, module):
+        for mod in module.children():
+            self.remove_activation(mod)
 
     def contains(self, tensor):
         """
