@@ -10,6 +10,12 @@ import numpy as np
 import perturbator as P
 import cluster as C
 import handler as H
+import random
+
+
+
+
+
 
 def hook_all_fwd(model, hook_fn):
     hooks = {}
@@ -60,28 +66,36 @@ class SimpleConv(nn.Module):
         x = self.fc3(x)
         return x
 
+
+rado = np.random.binomial(1, 0.5, (4, 5, 3))
+print(rado)
+nums = np.packbits(rado, axis=0, bitorder='little')[0]
+print(nums)
+
+
+"""
 #Defining Networks
 net = SimpleNet()
 
 #Init the handler and clusters
 modules = list(net.children())
-mmodules = list(modules[0].modules())
 print(modules)
-print(mmodules)
-print(list(mmodules[1].modules()))
 
-'''
-print(modules)
+
 named_params = net.named_parameters()
+print(list(named_params))
 params = list(net.parameters())
 
-pert1 = P.Ones(1)
-pert2 = P.Twos(1)
+
+pert1 = P.BitwisePert(p=0.1)
+pert2 = P.BitwisePert(p=0.1)
 c1 = C.Cluster(perturb=[pert1], activations=[modules[0], modules[2]])
 c2 = C.Cluster(perturb=[pert2], activations=[modules[1]])
 clusters = [c1, c2]
 handler = H.Handler(net, clusters)
 handler.init_clusters()
+handler.perturb_modules()
+print(list(net.named_parameters()))
 #print(handler)
 hook_all_fwd(net, hook_print_fwd)
 handler.move_activation(c2, modules[2])
@@ -92,4 +106,13 @@ inp = torch.Tensor([1.])
 out = handler.forward(inp)
 print("")
 print(out)
-'''
+
+
+def confint_mean_testset():
+  top1avgs = []
+  while True:
+    top1avgs.append(test(model, loss_func, args.device, args.testloader, len(top1avgs), wm))
+    confint = sms.DescrStatsW(top1avgs).tconfint_mean()
+    if (confint[1]-confint[0] < args.confidence_interval_test and len(top1avgs) >5):
+        break
+"""

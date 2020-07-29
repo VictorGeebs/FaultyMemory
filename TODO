@@ -1,7 +1,10 @@
 - [X] Re-write architecture: with a per-tensor access, there is no longer a use for layer wrappers. The clusters can save the correct parameters themselves.
 - [X] Distinguish Clusters from activation perturbations -> if clusters only represent memory and contain tensors, it doesnt make sense they perturb activations of layers as a whole. 
-- [ ] Implement a Json/UI loader to save configurations and assign tensors and modules more easily
 - [X] Make test functions
 - [X] Make graph generators
-- [ ] Make sign inverter perturbation
-- [ ] Add recursive network hook for activations
+- [X] Make sign inverter perturbation
+- [X] Add recursive network hook for activations
+- [X] Add representation class to distinguish perturbation types from representations
+- [ ] Implement a Json/UI loader to save configurations and assign tensors and modules more easily
+- [ ] Make automated tests for the API itself
+- [ ] Make additional test networks -> MNIST, multiple representations

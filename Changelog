@@ -43,3 +43,13 @@ All notable changes to this project will be documented in this file.
 - The train.py file can be used as a template to train new networks quickly
 - The models folder has been added to contain trained models for testing perturbations or algorithms
 - Sign bit inverter perturbation added 
+
+## [0.1.3] - 2020-07-13
+### Added
+- Different representations can now be used to represent the weights and activations of the network
+- Current reprensentations: uint and int of all widths, binary representation
+- Representations can be assigned to both Clusters and Tensors for a more granular access
+
+### Changed
+- Overhaul of the perturbation process to reduce compute time
+- Test functions now perturb the network once and run tests instead of modifying the network each time to save time
