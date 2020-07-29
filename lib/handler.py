@@ -6,6 +6,7 @@ import math
 import numpy as np
 import perturbator as P
 import cluster as C
+import time
 
 class Handler():
     def __init__(self, net, clusters=None):
@@ -26,9 +27,19 @@ class Handler():
         r"""
         Saves every module, then perturbs every module by cluster, and then makes the forward pass
         """
+        print("saving modules")
         self.save_modules()
+        print("Perturbing modules")
+        start_time = time.time()
         self.perturb_modules()
-        return self.net.forward(x)
+        tot_time = time.time()-start_time
+        print("Time to perturb: ", tot_time)
+        print("making fwd pass")
+        start_time = time.time()
+        out =  self.net.forward(x)
+        tot_time = time.time()-start_time
+        print("Time to fwd pass: ", tot_time)
+        return out
 
     def restore_modules(self):
         r"""

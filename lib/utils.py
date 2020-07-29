@@ -54,11 +54,14 @@ def test_accuracy(net, testloader):
     total = 0
     with torch.no_grad():
         for data in testloader:
+            #print("starting data")
             samples, labels = data
             outputs = net(samples)
             _, predicted = torch.max(outputs, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
+            print("running acc: ", correct/total)
+            break
     accuracy = correct/total
     return accuracy
 

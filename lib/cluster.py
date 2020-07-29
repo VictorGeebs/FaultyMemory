@@ -10,11 +10,12 @@ class Cluster():
     """
     A faulty memory cluster that stores a collection of tensors to perturb them during the forward pass
     """
-    def __init__(self, perturb=None, tensors=None, activations=None, networks=None, network_activations=None):
+    def __init__(self, perturb=None, tensors=None, activations=None, networks=None, network_activations=None, repr=None):
         self.perturb = perturb if perturb is not None else []
         self.tensors = tensors if tensors is not None else []
         self.saved_tensors = None
-        self.activations = activations if activations is not None else []      
+        self.activations = activations if activations is not None else []
+        self.repr = repr
         self.hooks = {}
         self.save_tensors()
 
@@ -43,7 +44,7 @@ class Cluster():
         """
         for tensor in self.tensors:
             for perturb in self.perturb:
-                perturb(tensor)
+                perturb(tensor, self.repr)
 
     def restore_tensors(self):
         """
@@ -63,7 +64,7 @@ class Cluster():
     def save_tensors(self):
         self.saved_tensors = copy.deepcopy(self.tensors)
 
-    def add_tensor(self, tensor):
+    def add_tensor(self, tensor, repr=None):
         """
         Adds the specified tensor to the cluster's memory after verifying it isn't already present.
         """
@@ -80,7 +81,7 @@ class Cluster():
                 self.tensors.pop(i)
                 self.saved_tensors.pop(i)
     
-    def add_module(self, module):
+    def add_module(self, module, repr=None):
         """
         Adds every tensor in the specified module (nn.Module) to the cluster's memory with TensorCluster.add_tensor().
         """
@@ -94,7 +95,7 @@ class Cluster():
         for tensor in list(module.parameters()):
             self.remove_tensor(tensor)
 
-    def add_activation(self, module):
+    def add_activation(self, module, repr=None):
         self.activations.append(module)
         self.apply_hook(module)
 
