@@ -57,6 +57,7 @@ def test_accuracy(net, testloader):
             #print("starting data")
             samples, labels = data
             outputs = net(samples)
+            net.restore_modules()
             _, predicted = torch.max(outputs, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()

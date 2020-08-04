@@ -15,7 +15,7 @@ class Cluster():
         self.tensors = tensors if tensors is not None else []
         self.saved_tensors = None
         self.activations = activations if activations is not None else []
-        self.repr = repr
+        self.repr = repr if repr is not None else []
         self.hooks = {}
         self.save_tensors()
 
@@ -42,9 +42,9 @@ class Cluster():
         Applies every perturbation specified in this cluster to each of its tensors.\n
         Tensors are modified in-place, without modifying their reference.
         """
-        for tensor in self.tensors:
+        for i,  tensor in enumerate(self.tensors):
             for perturb in self.perturb:
-                perturb(tensor, self.repr)
+                perturb(tensor, self.repr[i])
 
     def restore_tensors(self):
         """
@@ -71,6 +71,7 @@ class Cluster():
         if self.contains(tensor) == False:
             self.tensors.append(tensor)
             self.saved_tensors.append(copy.deepcopy(tensor))
+            self.repr.append(repr)
 
     def remove_tensor(self, tensor):
         """
@@ -80,13 +81,14 @@ class Cluster():
             if tens is tensor:
                 self.tensors.pop(i)
                 self.saved_tensors.pop(i)
+                self.repr.pop(i)
     
     def add_module(self, module, repr=None):
         """
         Adds every tensor in the specified module (nn.Module) to the cluster's memory with TensorCluster.add_tensor().
         """
         for param in list(module.parameters()):
-            self.add_tensor(param)
+            self.add_tensor(param, repr)
 
     def remove_module(self, module):
         """
@@ -140,4 +142,5 @@ class Cluster():
         for hook in self.hooks:
             hook.remove()
 
-
+    def add_perturbation(self, perturb):
+        self.perturb.append(perturb)

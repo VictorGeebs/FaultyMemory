@@ -43,14 +43,22 @@ xor_net.load_state_dict(torch.load(XOR))
 #init params: depth=28, width=10
 net = McDo.WRN_McDonnell(depth=28, width=10, num_classes=10, dropit=False, actprec=3)
 state_dict = torch.load(PATH, map_location=torch.device('cpu'))['model_state_dict']
+otherdict = torch.load(PATH, map_location=torch.device('cpu'))
+#print(otherdict['lanmax_state_space'])
+
 
 net.load_state_dict(state_dict)
-
+#print("modules: ", list(net.named_modules()))
+#print(list(net.named_parameters())[-2])
 #for param in list(net.named_parameters()):
 #    print(param[0])
-#print(list(net.named_parameters())[0][0])
+#    input('next')
+thisDict = dict(net.named_modules())
+for key in thisDict:
+    print(key)
+#print(thisDict['conv_last.weight'])
 
-pert = P.BitwisePert(p=0)
+pert = P.BitwisePert(p=0.1)
 repr_bin = P.BinaryRepresentation()
 c1 = C.Cluster([pert], repr=repr_bin)
 m1 = list(net.parameters())[0:26]
@@ -58,16 +66,16 @@ for param in m1:
     c1.add_tensor(param)
 
 
-repr6 = P.Representation(width=3, unsigned=False)
+repr6 = P.Representation(width=3, unsigned=True)
 c2 = C.Cluster([pert], repr=repr6)
-m2 = list(net.parameters())[26:28]
-for param in m2:
-    c2.add_tensor(param)
+m2 = list(net.parameters())[26]
+c2.add_tensor(m2)
 
 handler = H.Handler(net, [c1])
 
 
 
+"""
 print("starting testing")
 start_time = time.time()
 
@@ -77,7 +85,6 @@ print("Acc: ", results)
 print("Time: ", tot_time)
 
 
-"""
 
 probs = np.logspace(-0.1, -2.5, 20)
 print(probs)

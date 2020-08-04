@@ -8,13 +8,11 @@ import copy
 import math
 import numpy as np
 import perturbator as P
+import representation as R
 import cluster as C
 import handler as H
 import random
-
-
-
-
+import json
 
 
 def hook_all_fwd(model, hook_fn):
@@ -67,47 +65,36 @@ class SimpleConv(nn.Module):
         return x
 
 
-rado = np.random.binomial(1, 0.5, (4, 5, 3))
-print(rado)
-nums = np.packbits(rado, axis=0, bitorder='little')[0]
-print(nums)
-
-
-"""
-#Defining Networks
 net = SimpleNet()
+handler = H.Handler(net)
 
-#Init the handler and clusters
-modules = list(net.children())
-print(modules)
-
-
-named_params = net.named_parameters()
-print(list(named_params))
-params = list(net.parameters())
-
-
-pert1 = P.BitwisePert(p=0.1)
-pert2 = P.BitwisePert(p=0.1)
-c1 = C.Cluster(perturb=[pert1], activations=[modules[0], modules[2]])
-c2 = C.Cluster(perturb=[pert2], activations=[modules[1]])
-clusters = [c1, c2]
-handler = H.Handler(net, clusters)
-handler.init_clusters()
-handler.perturb_modules()
-print(list(net.named_parameters()))
-#print(handler)
-hook_all_fwd(net, hook_print_fwd)
-handler.move_activation(c2, modules[2])
+# mod_dict = dict(net.named_modules())
+# mod = mod_dict['fc1']
+# print(mod)
+# param_dict = dict(mod.named_parameters())
+# #print(param_dict)
+# for key in param_dict:
+#     print(key)
+#     print(param_dict[key])
 
 
+with open('./profiles/default.txt') as file:
+    jsonstr = file.read()
+    handlerDict = json.loads(jsonstr)
+    handler.from_json(handlerDict)
+    for el in handler.tensor_info:
+        print(el)
+    #print(data['tensors'][0]['repr']['unsigned'])
 
-inp = torch.Tensor([1.])
-out = handler.forward(inp)
-print("")
+inp = torch.tensor([1.])
+out = handler(inp)
 print(out)
 
 
+
+
+
+"""
 def confint_mean_testset():
   top1avgs = []
   while True:

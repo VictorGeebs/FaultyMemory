@@ -44,7 +44,7 @@ All notable changes to this project will be documented in this file.
 - The models folder has been added to contain trained models for testing perturbations or algorithms
 - Sign bit inverter perturbation added 
 
-## [0.1.3] - 2020-07-13
+## [0.1.3] - 2020-07-29
 ### Added
 - Different representations can now be used to represent the weights and activations of the network
 - Current reprensentations: uint and int of all widths, binary representation
@@ -53,3 +53,14 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - Overhaul of the perturbation process to reduce compute time
 - Test functions now perturb the network once and run tests instead of modifying the network each time to save time
+
+## [0.1.4] - 2020-08-04
+### Added
+- Added base for Json loader
+- Added by-string constructors for representations and perturbations
+- Added a register of all tensors, their representation and their perturbations within the handler to be able to assign them to clusters
+- Added a profiles folder to store Json profiles
+
+### Changed
+- Clusters are no longer directly in charge of tensors, they are now only used to group tensors if the user desires to
+- Representations are now in their own file, representations.py

@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import random
 import numpy as np
-
+from representation import *
 
 # Representations: int, uint, binary (1 bit int)
 # 
@@ -54,57 +54,6 @@ def int_to_custom_repr(value, width=8, unsigned=True):
             value = value - pow(2, width)
     return value
 
-class Representation():
-    def __init__(self, width=8, unsigned=True):
-        self.width = width
-        self.unsigned = unsigned
-    
-    def convert_to_repr(self, value):
-        if self.unsigned == True:
-            value = value % (pow(2, self.width))
-            return np.uint8(value)
-        else:
-            value = (value % (pow(2, self.width)))
-            if (value >= (pow(2, self.width)/2)):
-                value = value - pow(2, self.width)
-        return np.int8(value)
-
-    def apply_mask(self, value, mask):
-        return value^mask
-
-    def apply_tensor_mask(self, tensor, mask):
-        param = np.bitwise_xor(tensor, mask)
-        return param
-
-class BinaryRepresentation(Representation):
-    def __init__(self, unsigned=False):
-        super(BinaryRepresentation, self).__init__()
-        self.width = 1
-        self.unsigned=unsigned
-
-    def convert_to_repr(self, value):
-        if self.unsigned == False:
-            if value <= 0:
-                value = -1
-            else:
-                value = 1
-        else:
-            if value >= 0.5:
-                value = 1
-            else:
-                value = 0
-        return value
-
-    def apply_mask(self, value, mask):
-        if mask == 0:
-            return value
-        else:
-            return value*-1
-
-    def apply_tensor_mask(self, tensor, mask):
-        param = np.bitwise_xor(tensor, mask)
-        param = (param * -1) - 1
-        return param
 
 class Perturbator():
     """
@@ -144,6 +93,9 @@ class BitwisePert(Perturbator):
     def __str__(self):
         return "Bitwise Perturb"
 
+    def __repr__(self):
+        return self.__str__()
+
     def perturb(self, param, repr=None):
         param_shape = param.shape
         param = param.flatten()
@@ -156,7 +108,6 @@ class BitwisePert(Perturbator):
         for i, value in enumerate(data):
             param.data[i] = value
         param = param.view(param_shape)
-
 
     def generate_mask(self, width):
         mask = np.zeros(8, dtype=int)
@@ -224,7 +175,6 @@ class SignInvert(Perturbator):
         return "SignInvert Perturbation"
 
     def perturb(self, param, repr=None):
-        #for param in list(params):
         param_shape = param.shape
         param = param.flatten()
         mask = torch.ones_like(param)
@@ -252,23 +202,6 @@ class Ones(Perturbator):
                     param.data[i] = 1
             param = param.view(param_shape)
 
-class Twos(Perturbator):
-    def __init__(self, p=1):
-        super(Twos, self).__init__()
-        self.p = p
-
-    def __str__(self):
-        return "Twos Perturb"
-
-    def perturb(self, params, repr=None):
-        for param in list(params):
-            param_shape = param.shape
-            param = param.flatten()
-            for i, _ in enumerate(param.data):
-                if (random.random() <= self.p):
-                    param.data[i] = 2
-            param = param.view(param_shape)
-
 class Gauss(Perturbator):
     def __init__(self, p=1, mu=0, sigma=1):
         super(Gauss, self).__init__()
@@ -287,3 +220,17 @@ class Gauss(Perturbator):
                 if (random.random() <= self.p):
                     param.data[i] += random.gauss(self.mu, self.sigma) * param.data[i]
             param = param.view(param_shape)
+
+
+PerturbatorDict = {
+    "Perturbator": Perturbator,
+    "BitwisePert": BitwisePert,
+    "Zeros": Zeros,
+    "SignInvert": SignInvert,
+    "Ones": Ones,
+    "Gauss": Gauss
+}
+
+def construct_pert(pertDict):
+    instance = PerturbatorDict[pertDict['name']](p=pertDict['p'])
+    return instance

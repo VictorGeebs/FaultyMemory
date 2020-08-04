@@ -16,3 +16,6 @@ data/cifar-10-batches-py/test_batch
 lib/__pycache__/Dropit.cpython-38.pyc
 lib/__pycache__/wrn_mcdonnell_manual.cpython-38.pyc
 models/mcdonnell.pth
+profiles/extra.txt
+lib/__pycache__/representation.cpython-38.pyc
+lib/__pycache__/perturbator_copy.cpython-38.pyc
