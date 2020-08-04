@@ -5,6 +5,7 @@
 - [X] Make sign inverter perturbation
 - [X] Add recursive network hook for activations
 - [X] Add representation class to distinguish perturbation types from representations
-- [ ] Implement a Json/UI loader to save configurations and assign tensors and modules more easily
+- [X] Implement a Json/UI loader to save configurations and assign tensors and modules more easily
+- [ ] JSON saver
 - [ ] Make automated tests for the API itself
 - [ ] Make additional test networks -> MNIST, multiple representations
