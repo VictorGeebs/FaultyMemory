@@ -64,3 +64,13 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - Clusters are no longer directly in charge of tensors, they are now only used to group tensors if the user desires to
 - Representations are now in their own file, representations.py
+
+## [0.1.5] - 2020-08-04
+### Added
+- Hooks for activations are now their own objects
+- Support for activations in Json loader
+
+### Changed
+- Overhaul of architecture and dataflow
+- The handler now stores and backs up all the relevant data for tensors and activations
+- In this version, Clusters are virtually useless, but will be used to create correlations in the future

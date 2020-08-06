@@ -61,6 +61,8 @@ RepresentationDict = {
     "BinaryRepresentation": BinaryRepresentation
 }
 
-def construct_repr(repr_data):
-    instance = RepresentationDict[repr_data['name']](width=repr_data['width'], unsigned=repr_data['unsigned'])
+def construct_repr(repr_dict):
+    if repr_dict is None:
+        return None
+    instance = RepresentationDict[repr_dict['name']](width=repr_dict['width'], unsigned=repr_dict['unsigned'])
     return instance

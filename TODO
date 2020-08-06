@@ -7,5 +7,8 @@
 - [X] Add representation class to distinguish perturbation types from representations
 - [X] Implement a Json/UI loader to save configurations and assign tensors and modules more easily
 - [ ] JSON saver
+- [ ] Prune useless function
+- [ ] Extend documentation 
 - [ ] Make automated tests for the API itself
+- [ ] Change clusters to deal with correlations
 - [ ] Make additional test networks -> MNIST, multiple representations

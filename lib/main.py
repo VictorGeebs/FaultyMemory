@@ -14,11 +14,15 @@ import handler as H
 import random
 import json
 
+import wrn_mcdonnell_manual as McDo
+import Dropit
+from collections import OrderedDict
 
 def hook_all_fwd(model, hook_fn):
     hooks = {}
     for name, module in model.named_modules():
         hooks[name] = module.register_forward_hook(hook_fn)
+        
 
 def hook_print_fwd(model, inp, out):
     print('')
@@ -64,10 +68,13 @@ class SimpleConv(nn.Module):
         x = self.fc3(x)
         return x
 
-
+#net = McDo.WRN_McDonnell(depth=28, width=10, num_classes=10, dropit=False, actprec=3)
 net = SimpleNet()
 handler = H.Handler(net)
 
+hook_all_fwd(net, hook_print_fwd)
+#param_list = list(net.named_parameters())
+#print(param_list[0][0])
 # mod_dict = dict(net.named_modules())
 # mod = mod_dict['fc1']
 # print(mod)
@@ -76,19 +83,25 @@ handler = H.Handler(net)
 # for key in param_dict:
 #     print(key)
 #     print(param_dict[key])
-
+#pert = P.Zeros(p=1)
 
 with open('./profiles/default.txt') as file:
     jsonstr = file.read()
     handlerDict = json.loads(jsonstr)
     handler.from_json(handlerDict)
-    for el in handler.tensor_info:
-        print(el)
+    #for el in handler.net.modules():
+    #    el.register_forward_hook(pert.hook)
     #print(data['tensors'][0]['repr']['unsigned'])
+
+print(handler.tensor_info)
+print(handler.acti_info)
+print(handler.hooks)
 
 inp = torch.tensor([1.])
 out = handler(inp)
-print(out)
+print('out: ', out)
+
+
 
 
 
