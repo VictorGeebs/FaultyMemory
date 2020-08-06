@@ -157,14 +157,16 @@ class Zeros(Perturbator):
     def __str__(self):
         return "Zero Perturb"
 
-    def perturb(self, params, repr=None):
-        for param in list(params):
-            param_shape = param.shape
-            param = param.flatten()
-            for i, _ in enumerate(param.data):
-                if (random.random() <= self.p):
-                    param.data[i] = 0
-            param = param.view(param_shape)
+    def __repr__(self):
+        return self.__str__()
+
+    def perturb(self, param, repr=None):
+        param_shape = param.shape
+        param = param.flatten()
+        for i, _ in enumerate(param.data):
+            if (random.random() <= self.p):
+                param.data[i] = 0
+        param = param.view(param_shape)
 
 class SignInvert(Perturbator):
     def __init__(self, p=1):
@@ -194,13 +196,12 @@ class Ones(Perturbator):
         return "Ones Perturb"
 
     def perturb(self, params, repr=None):
-        for param in list(params):
-            param_shape = param.shape
-            param = param.flatten()
-            for i, _ in enumerate(param.data):
-                if (random.random() <= self.p):
-                    param.data[i] = 1
-            param = param.view(param_shape)
+        param_shape = param.shape
+        param = param.flatten()
+        for i, _ in enumerate(param.data):
+            if (random.random() <= self.p):
+                param.data[i] = 1
+        param = param.view(param_shape)
 
 class Gauss(Perturbator):
     def __init__(self, p=1, mu=0, sigma=1):
@@ -213,13 +214,12 @@ class Gauss(Perturbator):
         return "Gaussian Perturb"
 
     def perturb(self, params, repr=None):
-        for param in list(params):
-            param_shape = param.shape
-            param = param.flatten()
-            for i, _ in enumerate(param.data):
-                if (random.random() <= self.p):
-                    param.data[i] += random.gauss(self.mu, self.sigma) * param.data[i]
-            param = param.view(param_shape)
+        param_shape = param.shape
+        param = param.flatten()
+        for i, _ in enumerate(param.data):
+            if (random.random() <= self.p):
+                param.data[i] += random.gauss(self.mu, self.sigma) * param.data[i]
+        param = param.view(param_shape)
 
 
 PerturbatorDict = {
@@ -231,6 +231,8 @@ PerturbatorDict = {
     "Gauss": Gauss
 }
 
-def construct_pert(pertDict):
-    instance = PerturbatorDict[pertDict['name']](p=pertDict['p'])
+def construct_pert(pert_dict):
+    if pert_dict is None:
+        return None
+    instance = PerturbatorDict[pert_dict['name']](p=pert_dict['p'])
     return instance
