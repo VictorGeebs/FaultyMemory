@@ -1,0 +1,117 @@
+{
+	"net_path": null,
+	"nb_clusters": 1,
+	"weights": {
+		"net": null,
+		"modules": null,
+		"tensors": [
+			{
+				"name": "fc1.weight",
+				"repr": {
+					"name": "BinaryRepresentation",
+					"width": 1,
+					"unsigned": false
+				},
+				"perturb": [
+					{
+						"name": "Zeros",
+						"p": 0
+					}
+				]
+			},
+			{
+				"name": "fc1.bias",
+				"repr": {
+					"name": "BinaryRepresentation",
+					"width": 1,
+					"unsigned": false
+				},
+				"perturb": [
+					{
+						"name": "Zeros",
+						"p": 0
+					}
+				]
+			},
+			{
+				"name": "fc2.weight",
+				"repr": {
+					"name": "BinaryRepresentation",
+					"width": 1,
+					"unsigned": false
+				},
+				"perturb": [
+					{
+						"name": "Zeros",
+						"p": 0
+					}
+				]
+			},
+			{
+				"name": "fc2.bias",
+				"repr": {
+					"name": "BinaryRepresentation",
+					"width": 1,
+					"unsigned": false
+				},
+				"perturb": [
+					{
+						"name": "Zeros",
+						"p": 0
+					}
+				]
+			},
+			{
+				"name": "fc3.weight",
+				"repr": {
+					"name": "BinaryRepresentation",
+					"width": 1,
+					"unsigned": false
+				},
+				"perturb": [
+					{
+						"name": "Zeros",
+						"p": 0
+					}
+				]
+			},
+			{
+				"name": "fc3.bias",
+				"repr": {
+					"name": "BinaryRepresentation",
+					"width": 1,
+					"unsigned": false
+				},
+				"perturb": [
+					{
+						"name": "Zeros",
+						"p": 0
+					}
+				]
+			}
+		]
+	},
+	"activations": {
+		"net": null,
+		"modules": [
+			{
+				"name": "fc3",
+				"repr": {
+					"name": "BinaryRepresentation",
+					"width": 1,
+					"unsigned": false
+				},
+				"perturb": [
+					{
+						"name": "BitwisePert",
+						"p": 1
+					},
+					{
+						"name": "Zeros",
+						"p": 0.1
+					}
+				]
+			}
+		]
+	}
+}

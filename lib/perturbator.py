@@ -3,6 +3,7 @@ import torch.nn as nn
 import random
 import numpy as np
 from representation import *
+from json import JSONEncoder
 
 # Representations: int, uint, binary (1 bit int)
 # 
@@ -84,6 +85,12 @@ class Perturbator():
 
     def hook(self, module, inp, out):
         return self.perturb(out)
+
+    def to_json(self):
+        dict = {}
+        dict["name"] = self.__class__.__name__
+        dict["p"] = self.p
+        return dict
 
 class BitwisePert(Perturbator):
     def __init__(self, p=1):

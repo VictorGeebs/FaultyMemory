@@ -25,6 +25,13 @@ class Representation():
         param = np.bitwise_xor(tensor, mask)
         return param
 
+    def to_json(self):
+        dict = {}
+        dict["name"] = self.__class__.__name__
+        dict["width"] = self.width
+        dict["unsigned"] = self.unsigned
+        return dict
+
 class BinaryRepresentation(Representation):
     def __init__(self, unsigned=False, width=1):
         super(BinaryRepresentation, self).__init__()
