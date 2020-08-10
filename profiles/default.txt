@@ -5,7 +5,12 @@
     {
         "net": 
         {
-            "repr":null,
+            "repr":
+            {
+                "name": "BinaryRepresentation",
+                "unsigned": false,
+                "width":1
+            },
             "perturb":[
                 {
                     "name":"Zeros",

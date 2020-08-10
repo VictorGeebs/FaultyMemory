@@ -72,37 +72,22 @@ class SimpleConv(nn.Module):
 net = SimpleNet()
 handler = H.Handler(net)
 
-hook_all_fwd(net, hook_print_fwd)
-#param_list = list(net.named_parameters())
-#print(param_list[0][0])
-# mod_dict = dict(net.named_modules())
-# mod = mod_dict['fc1']
-# print(mod)
-# param_dict = dict(mod.named_parameters())
-# #print(param_dict)
-# for key in param_dict:
-#     print(key)
-#     print(param_dict[key])
-#pert = P.Zeros(p=1)
+pert = P.BitwisePert(p=0.5)
+repr = R.BinaryRepresentation()
 
-with open('./profiles/default.txt') as file:
+
+
+with open('./profiles/saved_handler.txt') as file:
     jsonstr = file.read()
     handlerDict = json.loads(jsonstr)
     handler.from_json(handlerDict)
-    #for el in handler.net.modules():
-    #    el.register_forward_hook(pert.hook)
-    #print(data['tensors'][0]['repr']['unsigned'])
 
-print(handler.tensor_info)
-print(handler.acti_info)
-print(handler.hooks)
+with open('./profiles/saved_handler.txt', 'w') as file:
+    json.dump(handler.to_json(), file, indent="\t")
 
 inp = torch.tensor([1.])
 out = handler(inp)
 print('out: ', out)
-
-
-
 
 
 

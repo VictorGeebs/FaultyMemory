@@ -9,6 +9,7 @@ import representation as R
 from hook import *
 import cluster as C
 import time
+import json
 
 
 class Handler():
@@ -233,3 +234,68 @@ class Handler():
                     hook = Hook(perturbs, repr)
                     self.hooks[module_name] = current_mod.register_forward_hook(hook.hook_fn)
                     self.acti_info[module_name] = (perturbs, repr)
+
+    def to_json(self, net_path=None):
+        handler_dict = {
+            "net_path" : net_path,
+            "nb_clusters" : len(self.clusters)
+        }
+        
+        
+
+        # Tensors
+        tensor_list = []
+        for name in self.tensor_info:
+            tensor_list.append(self.tensor_to_json(name))
+        
+        handler_dict["weights"] = {
+            "net" : None,
+            "modules" : None, 
+            "tensors" : tensor_list
+
+        }
+
+        # Activations
+        acti_list = []
+        for name in self.acti_info:
+            acti_list.append(self.acti_to_json(name))
+        
+        handler_dict["activations"] = {
+            "net" : None,
+            "modules" : acti_list
+        }
+        return handler_dict    
+
+    def tensor_to_json(self, tensor_name):
+        name = tensor_name
+        tup = self.tensor_info[name]
+        pert_list = tup[0]
+        repr = tup[1]
+
+        repr_data = repr.to_json() if repr is not None else None
+        pert_data = [o.to_json() for o in pert_list] if pert_list is not None else None
+
+        tensor_dict = {
+            "name" : name,
+            "repr" : repr_data,
+            "perturb" : pert_data
+        }
+
+        return tensor_dict
+
+    def acti_to_json(self, tensor_name):
+        name = tensor_name
+        tup = self.acti_info[name]
+        pert_list = tup[0]
+        repr = tup[1]
+
+        repr_data = repr.to_json() if repr is not None else None
+        pert_data = [o.to_json() for o in pert_list] if pert_list is not None else None
+
+        acti_dict = {
+            "name" : name,
+            "repr" : repr_data,
+            "perturb" : pert_data
+        }
+
+        return acti_dict
