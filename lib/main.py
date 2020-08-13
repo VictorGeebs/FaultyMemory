@@ -23,6 +23,7 @@ def hook_all_fwd(model, hook_fn):
     for name, module in model.named_modules():
         hooks[name] = module.register_forward_hook(hook_fn)
         
+failPert = P.Perturbator(p=2)
 
 def hook_print_fwd(model, inp, out):
     print('')
@@ -75,14 +76,12 @@ handler = H.Handler(net)
 pert = P.BitwisePert(p=0.5)
 repr = R.BinaryRepresentation()
 
-
-
-with open('./profiles/saved_handler.txt') as file:
+with open('./profiles/saved_handler.json') as file:
     jsonstr = file.read()
     handlerDict = json.loads(jsonstr)
     handler.from_json(handlerDict)
 
-with open('./profiles/saved_handler.txt', 'w') as file:
+with open('./profiles/saved_handler.json', 'w') as file:
     json.dump(handler.to_json(), file, indent="\t")
 
 inp = torch.tensor([1.])
