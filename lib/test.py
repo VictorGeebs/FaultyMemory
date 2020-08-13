@@ -20,62 +20,40 @@ import wrn_mcdonnell_manual as McDo
 import Dropit
 from collections import OrderedDict
 import time
+import json
 
 PATH = './models/mcdonnell.pth'
-XOR = './models/xor_net.pth'
 
 
 transform = transforms.Compose(
     [transforms.ToTensor(),
      transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
-xor_set = utils.R2Dataset(2, 10000)
-xor_loader = torch.utils.data.DataLoader(xor_set, batch_size=1, shuffle=False, num_workers=2)
-
 testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
 testloader = torch.utils.data.DataLoader(testset, batch_size=2048, shuffle=False, num_workers=2)
 
-# Loading Net
-xor_net = utils.Xor()
-xor_net.load_state_dict(torch.load(XOR))
 
 
 #init params: depth=28, width=10
 net = McDo.WRN_McDonnell(depth=28, width=10, num_classes=10, dropit=False, actprec=3)
 state_dict = torch.load(PATH, map_location=torch.device('cpu'))['model_state_dict']
-otherdict = torch.load(PATH, map_location=torch.device('cpu'))
-#print(otherdict['lanmax_state_space'])
-
 
 net.load_state_dict(state_dict)
-#print("modules: ", list(net.named_modules()))
-#print(list(net.named_parameters())[-2])
-#for param in list(net.named_parameters()):
-#    print(param[0])
-#    input('next')
-thisDict = dict(net.named_modules())
-for key in thisDict:
-    print(key)
-#print(thisDict['conv_last.weight'])
 
-pert = P.BitwisePert(p=0.1)
-repr_bin = P.BinaryRepresentation()
-c1 = C.Cluster([pert], repr=repr_bin)
-m1 = list(net.parameters())[0:26]
-for param in m1:
-    c1.add_tensor(param)
+convName = "conv0.weight"
+filter1 = dict(net.named_parameters())[convName][0]
+filt_param = nn.Parameter(data=filter1, requires_grad=True)
+net.register_parameter(name="filter1", param=filt_param)
+
+for name in dict(net.named_parameters()):
+    print(name)
+
+#print(dict(net.named_parameters())[convName])
+
+handler = H.Handler(net)
+handler.from_json('./profiles/default.json')
 
 
-repr6 = P.Representation(width=3, unsigned=True)
-c2 = C.Cluster([pert], repr=repr6)
-m2 = list(net.parameters())[26]
-c2.add_tensor(m2)
-
-handler = H.Handler(net, [c1])
-
-
-
-"""
 print("starting testing")
 start_time = time.time()
 
@@ -84,6 +62,7 @@ tot_time = time.time()-start_time
 print("Acc: ", results)
 print("Time: ", tot_time)
 
+"""
 
 
 probs = np.logspace(-0.1, -2.5, 20)

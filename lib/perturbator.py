@@ -5,57 +5,6 @@ import numpy as np
 from representation import *
 from json import JSONEncoder
 
-# Representations: int, uint, binary (1 bit int)
-# 
-def weight_to_int(tensor):
-    for param in list(tensor):
-        param_shape = param.shape
-        param = param.flatten()
-        #param = torch.round(param)
-        for i, _ in enumerate(param.data):    
-            param.data[i] = torch.round(param.data[i])
-        param = param.view(param_shape)
-
-def int_to_repr(tensor, repr):
-    for param in list(tensor):
-        param_shape = param.shape
-        param = param.flatten()
-        for i, _ in enumerate(param.data):
-            param.data[i] = repr(param.data[i])
-        param = param.view(param_shape)
-
-def generate_mask(width, p):
-    mask = np.zeros(8, dtype=int)
-    for i, _ in enumerate(mask):
-        if (8-i <= width):
-            if (random.random() <= p):
-                mask[i] = 1
-    mask = np.packbits(mask)
-    return mask
-
-def tens_to_repr(tensor, width=8, unsigned=True):
-    for param in list(tensor):
-            param_shape = param.shape
-            param = param.flatten()
-            for i, _ in enumerate(param.data):
-                param.data[i] = int_to_custom_repr(param.data[i], width, unsigned)
-            param = param.view(param_shape)
-
-def int_to_custom_repr(value, width=8, unsigned=True):
-    if width == 1:
-        value = int(value > 0)
-        if unsigned == False and value == 0:
-            value = -1
-        return value
-    if unsigned == True:
-        value = value % (pow(2, width))
-    else:
-        value = (value % (pow(2, width)))
-        if (value >= (pow(2, width)/2)):
-            value = value - pow(2, width)
-    return value
-
-
 class Perturbator():
     """
     Base class for all perturbators that modelize calculation, memory or 
@@ -70,6 +19,7 @@ class Perturbator():
 
     def __str__(self):
         return "Base class"
+
     def __repr__(self):
         return self.__str__
 
@@ -98,7 +48,7 @@ class BitwisePert(Perturbator):
         self.p = p
     
     def __str__(self):
-        return "Bitwise Perturb"
+        return "Bitwise Perturbation"
 
     def __repr__(self):
         return self.__str__()
@@ -127,42 +77,16 @@ class BitwisePert(Perturbator):
         mask = np.random.binomial(1, self.p, (width, tensor_length))
         return np.packbits(mask, axis=0, bitorder='little')[0]
 
-    def generate_tensor_mask_int(self, width, tensor_length):
-        return np.random.randint(0, 2**width, tensor_length, dtype=np.uint8)
-
-    def weight_to_int(self, tensor):
-        for param in list(tensor):
-            param_shape = param.shape
-            param = param.flatten()
-            for i, _ in enumerate(param.data):    
-                param.data[i] = torch.round(param.data[i])
-            param = param.view(param_shape)
-
-    def tensor_to_repr(self, tensor, repr):
-        for param in list(tensor):
-            param_shape = param.shape
-            param = param.flatten()
-            for i, _ in enumerate(param.data):
-                param.data[i] = self.value_to_repr(param.data[i], repr)
-            param = param.view(param_shape)
-
-    def value_to_repr(self, value, repr):
-        if repr.unsigned == True:
-            value = value % (pow(2, repr.width))
-            return np.uint8(value)
-        else:
-            value = (value % (pow(2, repr.width)))
-            if (value > (pow(2, repr.width)/2)):
-                value = value - pow(2, repr.width)
-        return np.int8(value)
-
 class Zeros(Perturbator):
+    """
+    A 'Stuck-at-Zero' perturbation, regardless of representation
+    """
     def __init__(self, p=1):
         super(Zeros, self).__init__()
         self.p = p
 
     def __str__(self):
-        return "Zero Perturb"
+        return "Zero Perturbation"
 
     def __repr__(self):
         return self.__str__()
@@ -176,6 +100,9 @@ class Zeros(Perturbator):
         param = param.view(param_shape)
 
 class SignInvert(Perturbator):
+    """
+    Perturbation that inverts the sign of the input
+    """
     def __init__(self, p=1):
         super(SignInvert, self).__init__()
         self.p = p
@@ -186,15 +113,19 @@ class SignInvert(Perturbator):
     def perturb(self, param, repr=None):
         param_shape = param.shape
         param = param.flatten()
-        mask = torch.ones_like(param)
-        for i, _ in enumerate(mask):
-            if random.random() <= self.p:
-                mask[i] = 0
+        mask = np.random.binomial(1, self.p, (param.shape[0]))
+        #mask = torch.ones_like(param)
+        #for i, _ in enumerate(mask):
+        #    if random.random() <= self.p:
+        #        mask[i] = 0
         mask = mask*2 - 1
         param *= mask
         param = param.view(param_shape)
 
 class Ones(Perturbator):
+    """
+    A 'Stuck-at-One' perturbation, regardless of representation
+    """
     def __init__(self, p=1):
         super(Ones, self).__init__()
         self.p = p
@@ -211,6 +142,9 @@ class Ones(Perturbator):
         param = param.view(param_shape)
 
 class Gauss(Perturbator):
+    """
+    Introduces gaussian noise into the inputs
+    """
     def __init__(self, p=1, mu=0, sigma=1):
         super(Gauss, self).__init__()
         self.p = p
@@ -228,9 +162,10 @@ class Gauss(Perturbator):
                 param.data[i] += random.gauss(self.mu, self.sigma) * param.data[i]
         param = param.view(param_shape)
 
-
+"""
+This dictionnary is used to construct perturbations from a JSON input
+"""
 PerturbatorDict = {
-    "Perturbator": Perturbator,
     "BitwisePert": BitwisePert,
     "Zeros": Zeros,
     "SignInvert": SignInvert,
@@ -239,6 +174,10 @@ PerturbatorDict = {
 }
 
 def construct_pert(pert_dict):
+    """
+    Constructs a perturbation according to the dictionnary provided.
+    The dictionnary should have a field for 'name' equals to the name of the class and a probability p.
+    """
     if pert_dict is None:
         return None
     instance = PerturbatorDict[pert_dict['name']](p=pert_dict['p'])
