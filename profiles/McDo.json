@@ -1,5 +1,5 @@
 {
-	"nb_clusters": 0,
+	"nb_clusters": 1,
 	"weights": {
 		"net": null,
 		"modules": null,
@@ -7,375 +7,376 @@
 			{
 				"name": "conv0.weight",
 				"repr": {
-					"name": "Representation",
-					"width": 5,
+					"name": "BinaryRepresentation",
+					"width": 1,
 					"unsigned": false
 				},
 				"perturb": [
 					{
-						"name": "Zeros",
-						"p": 0.1
+						"name": "BitwisePert",
+						"p": 0.030520680167656355
 					}
 				]
 			},
 			{
 				"name": "group0.block0.conv0.weight",
 				"repr": {
-					"name": "Representation",
-					"width": 5,
+					"name": "BinaryRepresentation",
+					"width": 1,
 					"unsigned": false
 				},
 				"perturb": [
 					{
-						"name": "Zeros",
-						"p": 0.1
+						"name": "BitwisePert",
+						"p": 0.10167032374617577
 					}
 				]
 			},
 			{
 				"name": "group0.block0.conv1.weight",
 				"repr": {
-					"name": "Representation",
-					"width": 5,
+					"name": "BinaryRepresentation",
+					"width": 1,
 					"unsigned": false
 				},
 				"perturb": [
 					{
-						"name": "Zeros",
-						"p": 0.1
+						"name": "BitwisePert",
+						"p": 0.10167032374617577
 					}
 				]
 			},
 			{
 				"name": "group0.block1.conv0.weight",
 				"repr": {
-					"name": "Representation",
-					"width": 5,
+					"name": "BinaryRepresentation",
+					"width": 1,
 					"unsigned": false
 				},
 				"perturb": [
 					{
-						"name": "Zeros",
-						"p": 0.1
+						"name": "BitwisePert",
+						"p": 0.10167032374617577
 					}
 				]
 			},
 			{
 				"name": "group0.block1.conv1.weight",
 				"repr": {
-					"name": "Representation",
-					"width": 5,
+					"name": "BinaryRepresentation",
+					"width": 1,
 					"unsigned": false
 				},
 				"perturb": [
 					{
-						"name": "Zeros",
-						"p": 0.1
+						"name": "BitwisePert",
+						"p": 0.10167032374617577
 					}
 				]
 			},
 			{
 				"name": "group0.block2.conv0.weight",
 				"repr": {
-					"name": "Representation",
-					"width": 5,
+					"name": "BinaryRepresentation",
+					"width": 1,
 					"unsigned": false
 				},
 				"perturb": [
 					{
-						"name": "Zeros",
-						"p": 0.1
+						"name": "BitwisePert",
+						"p": 0.10167032374617577
 					}
 				]
 			},
 			{
 				"name": "group0.block2.conv1.weight",
 				"repr": {
-					"name": "Representation",
-					"width": 5,
+					"name": "BinaryRepresentation",
+					"width": 1,
 					"unsigned": false
 				},
 				"perturb": [
 					{
-						"name": "Zeros",
-						"p": 0.1
+						"name": "BitwisePert",
+						"p": 0.10167032374617577
 					}
 				]
 			},
 			{
 				"name": "group0.block3.conv0.weight",
 				"repr": {
-					"name": "Representation",
-					"width": 5,
+					"name": "BinaryRepresentation",
+					"width": 1,
 					"unsigned": false
 				},
 				"perturb": [
 					{
-						"name": "Zeros",
-						"p": 0.1
+						"name": "BitwisePert",
+						"p": 0.10167032374617577
 					}
 				]
 			},
 			{
 				"name": "group0.block3.conv1.weight",
 				"repr": {
-					"name": "Representation",
-					"width": 5,
+					"name": "BinaryRepresentation",
+					"width": 1,
 					"unsigned": false
 				},
 				"perturb": [
 					{
-						"name": "Zeros",
-						"p": 0.1
+						"name": "BitwisePert",
+						"p": 0.10167032374617577
 					}
 				]
 			},
 			{
 				"name": "group1.block0.conv0.weight",
 				"repr": {
-					"name": "Representation",
-					"width": 5,
+					"name": "BinaryRepresentation",
+					"width": 1,
 					"unsigned": false
 				},
 				"perturb": [
 					{
-						"name": "Zeros",
-						"p": 0.1
+						"name": "BitwisePert",
+						"p": 0.21276730172802344
 					}
 				]
 			},
 			{
 				"name": "group1.block0.conv1.weight",
 				"repr": {
-					"name": "Representation",
-					"width": 5,
+					"name": "BinaryRepresentation",
+					"width": 1,
 					"unsigned": false
 				},
 				"perturb": [
 					{
-						"name": "Zeros",
-						"p": 0.1
+						"name": "BitwisePert",
+						"p": 0.21276730172802344
 					}
 				]
 			},
 			{
 				"name": "group1.block1.conv0.weight",
 				"repr": {
-					"name": "Representation",
-					"width": 5,
+					"name": "BinaryRepresentation",
+					"width": 1,
 					"unsigned": false
 				},
 				"perturb": [
 					{
-						"name": "Zeros",
-						"p": 0.1
+						"name": "BitwisePert",
+						"p": 0.21276730172802344
 					}
 				]
 			},
 			{
 				"name": "group1.block1.conv1.weight",
 				"repr": {
-					"name": "Representation",
-					"width": 5,
+					"name": "BinaryRepresentation",
+					"width": 1,
 					"unsigned": false
 				},
 				"perturb": [
 					{
-						"name": "Zeros",
-						"p": 0.1
+						"name": "BitwisePert",
+						"p": 0.21276730172802344
 					}
 				]
 			},
 			{
 				"name": "group1.block2.conv0.weight",
 				"repr": {
-					"name": "Representation",
-					"width": 5,
+					"name": "BinaryRepresentation",
+					"width": 1,
 					"unsigned": false
 				},
 				"perturb": [
 					{
-						"name": "Zeros",
-						"p": 0.1
+						"name": "BitwisePert",
+						"p": 0.21276730172802344
 					}
 				]
 			},
 			{
 				"name": "group1.block2.conv1.weight",
 				"repr": {
-					"name": "Representation",
-					"width": 5,
+					"name": "BinaryRepresentation",
+					"width": 1,
 					"unsigned": false
 				},
 				"perturb": [
 					{
-						"name": "Zeros",
-						"p": 0.1
+						"name": "BitwisePert",
+						"p": 0.21276730172802344
 					}
 				]
 			},
 			{
 				"name": "group1.block3.conv0.weight",
 				"repr": {
-					"name": "Representation",
-					"width": 5,
+					"name": "BinaryRepresentation",
+					"width": 1,
 					"unsigned": false
 				},
 				"perturb": [
 					{
-						"name": "Zeros",
-						"p": 0.1
+						"name": "BitwisePert",
+						"p": 0.21276730172802344
 					}
 				]
 			},
 			{
 				"name": "group1.block3.conv1.weight",
 				"repr": {
-					"name": "Representation",
-					"width": 5,
+					"name": "BinaryRepresentation",
+					"width": 1,
 					"unsigned": false
 				},
 				"perturb": [
 					{
-						"name": "Zeros",
-						"p": 0.1
+						"name": "BitwisePert",
+						"p": 0.21276730172802344
 					}
 				]
 			},
 			{
 				"name": "group2.block0.conv0.weight",
 				"repr": {
-					"name": "Representation",
-					"width": 5,
+					"name": "BinaryRepresentation",
+					"width": 1,
 					"unsigned": false
 				},
 				"perturb": [
 					{
-						"name": "Zeros",
-						"p": 0.1
+						"name": "BitwisePert",
+						"p": 0.21276730172802344
 					}
 				]
 			},
 			{
 				"name": "group2.block0.conv1.weight",
 				"repr": {
-					"name": "Representation",
-					"width": 5,
+					"name": "BinaryRepresentation",
+					"width": 1,
 					"unsigned": false
 				},
 				"perturb": [
 					{
-						"name": "Zeros",
-						"p": 0.1
+						"name": "BitwisePert",
+						"p": 0.4154710714662446
 					}
 				]
 			},
 			{
 				"name": "group2.block1.conv0.weight",
 				"repr": {
-					"name": "Representation",
-					"width": 5,
+					"name": "BinaryRepresentation",
+					"width": 1,
 					"unsigned": false
 				},
 				"perturb": [
 					{
-						"name": "Zeros",
-						"p": 0.1
+						"name": "BitwisePert",
+						"p": 0.4154710714662446
 					}
 				]
 			},
 			{
 				"name": "group2.block1.conv1.weight",
 				"repr": {
-					"name": "Representation",
-					"width": 5,
+					"name": "BinaryRepresentation",
+					"width": 1,
 					"unsigned": false
 				},
 				"perturb": [
 					{
-						"name": "Zeros",
-						"p": 0.1
+						"name": "BitwisePert",
+						"p": 0.4154710714662446
 					}
 				]
 			},
 			{
 				"name": "group2.block2.conv0.weight",
 				"repr": {
-					"name": "Representation",
-					"width": 5,
+					"name": "BinaryRepresentation",
+					"width": 1,
 					"unsigned": false
 				},
 				"perturb": [
 					{
-						"name": "Zeros",
-						"p": 0.1
+						"name": "BitwisePert",
+						"p": 0.4154710714662446
 					}
 				]
 			},
 			{
 				"name": "group2.block2.conv1.weight",
 				"repr": {
-					"name": "Representation",
-					"width": 5,
+					"name": "BinaryRepresentation",
+					"width": 1,
 					"unsigned": false
 				},
 				"perturb": [
 					{
-						"name": "Zeros",
-						"p": 0.1
+						"name": "BitwisePert",
+						"p": 0.4154710714662446
 					}
 				]
 			},
 			{
 				"name": "group2.block3.conv0.weight",
 				"repr": {
-					"name": "Representation",
-					"width": 5,
+					"name": "BinaryRepresentation",
+					"width": 1,
 					"unsigned": false
 				},
 				"perturb": [
 					{
-						"name": "Zeros",
-						"p": 0.1
+						"name": "BitwisePert",
+						"p": 0.4154710714662446
 					}
 				]
 			},
 			{
 				"name": "group2.block3.conv1.weight",
 				"repr": {
-					"name": "Representation",
-					"width": 5,
+					"name": "BinaryRepresentation",
+					"width": 1,
 					"unsigned": false
 				},
 				"perturb": [
 					{
-						"name": "Zeros",
-						"p": 0.1
+						"name": "BitwisePert",
+						"p": 0.4154710714662446
 					}
 				]
 			},
 			{
-				"name": "bn_last.weight",
+				"name": "conv_last.weight",
 				"repr": {
 					"name": "BinaryRepresentation",
 					"width": 1,
 					"unsigned": false
 				},
+				"perturb": [
+					{
+						"name": "BitwisePert",
+						"p": 0.030520680167656355
+					}
+				]
+			},
+			{
+				"name": "bn_last.weight",
+				"repr": null,
 				"perturb": null
 			},
 			{
 				"name": "bn_last.bias",
-				"repr": {
-					"name": "Representation",
-					"width": 5,
-					"unsigned": false
-				},
-				"perturb": [
-					{
-						"name": "Zeros",
-						"p": 0.1
-					}
-				]
+				"repr": null,
+				"perturb": null
 			}
 		]
 	},

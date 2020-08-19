@@ -7,8 +7,19 @@
 - [X] Add representation class to distinguish perturbation types from representations
 - [X] Implement a Json/UI loader to save configurations and assign tensors and modules more easily
 - [X] JSON saver
-- [ ] Prune useless function
-- [ ] Extend documentation 
+- [X] Prune useless function
+- [X] Extend documentation
 - [ ] Make automated tests for the API itself
 - [ ] Change clusters to deal with correlations
+- [ ] Fixed-point representation
+- [ ] Make functions list-agnostic (dont have to pass perturbs as lists of length 1)
 - [ ] Make additional test networks -> MNIST, multiple representations
+- [ ] JSON load by class type (Perturb all conv2d)
+- [ ] Profiling of execute time
+- [ ] Use other lib than numpy
+- [ ] Write C function with numpy plugin
+- [ ] Handler perturb toggle
+- [ ] Backprop perturb
+- [ ] Utils test_acc resampling with same pert
+- [ ] Quantization - he scaling - mean scaling
+- [ ] Clustering - dont worry about it

@@ -23,7 +23,6 @@ def hook_all_fwd(model, hook_fn):
     for name, module in model.named_modules():
         hooks[name] = module.register_forward_hook(hook_fn)
         
-failPert = P.Perturbator(p=2)
 
 def hook_print_fwd(model, inp, out):
     print('')
@@ -69,23 +68,33 @@ class SimpleConv(nn.Module):
         x = self.fc3(x)
         return x
 
-#net = McDo.WRN_McDonnell(depth=28, width=10, num_classes=10, dropit=False, actprec=3)
-net = SimpleNet()
-handler = H.Handler(net)
+from scipy.cluster.vq import kmeans
+from scipy.cluster import vq
 
-pert = P.BitwisePert(p=0.5)
-repr = R.BinaryRepresentation()
 
-with open('./profiles/saved_handler.json') as file:
-    jsonstr = file.read()
-    handlerDict = json.loads(jsonstr)
-    handler.from_json(handlerDict)
+net = McDo.WRN_McDonnell(depth=28, width=10, num_classes=10, dropit=False, actprec=3)
+#net = SimpleNet()
 
-with open('./profiles/saved_handler.json', 'w') as file:
-    json.dump(handler.to_json(), file, indent="\t")
+
+nb_clusters = 4
+cluster_list = [C.Cluster() for _ in range(nb_clusters)]
+print(cluster_list)
+handler = H.Handler(net, cluster_list)
+
+
+
+handler.from_json('./profiles/McDo.json')
+
+handler.assign_clusters()
+#handler.to_json('./profiles/saved_handler.json')
+exit()
+print(handler)
 
 inp = torch.tensor([1.])
 out = handler(inp)
+
+print(handler)
+
 print('out: ', out)
 
 

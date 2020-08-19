@@ -12,6 +12,13 @@ class Representation():
         self.width = width
         self.unsigned = unsigned
     
+    def __str__(self):
+        print("Representation")
+        return ''
+
+    def __repr__(self):
+        return self.__str__()
+
     def convert_to_repr(self, value):
         """
         Converts a value to the representation and returns it as its numpy version

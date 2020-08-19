@@ -10,7 +10,7 @@ from hook import *
 import cluster as C
 import time
 import json
-
+from scipy.cluster.vq import kmeans, vq
 
 class Handler():
     """
@@ -24,6 +24,7 @@ class Handler():
         self.tensor_info = {}
         self.acti_info = {}
         self.hooks = {}
+        self.clustering = False
 
     def __str__(self):
         print("Handler: ")
@@ -111,9 +112,16 @@ class Handler():
         self.hooks[name] = module.register_forward_hook(hook.hook_fn)
         self.acti_info[name] = (perturb, representation)
 
+    def remove_activation(self, name):
+        self.acti_info.pop(name, None)
+
     def add_network_activations(self, perturb=None, representation=None):
         for module in dict(self.net.named_modules()):
             self.add_activation(module)
+
+    def clear_network_activations(self):
+        for module in dict(self.net.named_modules()):
+            self.remove_activation(module)
 
     def init_clusters(self, clusters=None, modules=None): # TODO: DEPRECATED
         """
@@ -166,19 +174,23 @@ class Handler():
         """
         self.saved_net = copy.deepcopy(self.net)
 
-    def perturb_tensors(self):
+    def perturb_tensors(self, scaling=False):
         """
         Applies every perturbation specified in their tensor_info to each tensor.\n
         Tensors are modified in-place, without modifying their reference.      
         """
-        for name, item in self.tensor_info.items():
-            tens = item[0]
-            pert = item[1]
-            repr = item[2]
-            if pert is not None:
-                for perturb in pert:
-                    if perturb is not None:
-                        perturb(tens, repr)
+        if self.clustering is True:
+            for cluster in self.clusters:
+                cluster.perturb_tensors()
+        else:
+            for name, item in self.tensor_info.items():
+                tens = item[0]
+                pert = item[1]
+                repr = item[2]
+                if pert is not None:
+                    for perturb in pert:
+                        if perturb is not None:
+                            perturb(tens, repr, scaling)
 
     def from_json(self, file_path):
         """
@@ -231,9 +243,12 @@ class Handler():
 
                     pert_list = module['perturb']
                     perturbs = []
-                    for pert_dict in pert_list:
-                        pert = P.construct_pert(pert_dict)
-                        perturbs.append(pert)
+                    if pert_list is not None:
+                        for pert_dict in pert_list:
+                            pert = P.construct_pert(pert_dict)
+                            perturbs.append(pert)
+                    else:
+                        perturbs=None
                     
                     current_mod = dict(self.net.named_modules())[module_name]
                     for param_key in dict(current_mod.named_parameters()):
@@ -252,9 +267,12 @@ class Handler():
 
                     pert_list = tensor['perturb']
                     perturbs = []
-                    for pert_dict in pert_list:
-                        pert = P.construct_pert(pert_dict)
-                        perturbs.append(pert)
+                    if pert_list is not None:
+                        for pert_dict in pert_list:
+                            pert = P.construct_pert(pert_dict)
+                            perturbs.append(pert)
+                    else:
+                        perturbs=None
 
                     tens = dict(self.net.named_parameters())[tensor_name]
                     self.tensor_info[tensor_name] = (tens, perturbs, repr)
@@ -298,6 +316,9 @@ class Handler():
                     hook = Hook(perturbs, repr)
                     self.hooks[module_name] = current_mod.register_forward_hook(hook.hook_fn)
                     self.acti_info[module_name] = (perturbs, repr)
+        
+        # Cluster assignement
+        self.assign_clusters()
 
     def to_json(self, file_path):
         with open(file_path, 'w') as file:
@@ -369,3 +390,56 @@ class Handler():
         }
 
         return acti_dict
+
+    def assign_clusters(self):
+        """
+        Applies k-means clustering to the perturbation rates of all perturbations 
+        to group them in the handler's clusters.
+        Currently only supports Bitwise Perturbations
+        """
+        running_perts = {}
+        for name in self.tensor_info:
+            item = self.tensor_info[name]
+            tens = item[0]
+            pert_list = item[1]
+            repr = item[2]
+            pert_names = []
+            prob_list = []
+            if pert_list is not None:
+                for pert in pert_list:
+                    pert_names.append(pert.__class__.__name__)
+                    prob_list.append(pert.p)
+            pert_names = '_'.join(pert_names)
+            if pert_names not in running_perts:
+                running_perts[pert_names] = [(name, prob_list)]
+            else:
+                running_perts[pert_names].append((name, prob_list))
+        running_perts.pop('')
+        assert len(running_perts) <= len(self.clusters), "More different perturbations than clusters available, cannot assign tensors to clusters"
+        
+        # ONLY BITWISEPERT FOR THE TIME BEING
+        bitwises = running_perts['BitwisePert']
+        bitwise_probs = [item[1][0] for item in bitwises]
+        centers, _ = kmeans(bitwise_probs, len(self.clusters))
+        groups, _ = vq(bitwise_probs, centers)
+
+        for tensor, cluster in zip(bitwises, groups):
+            name = tensor[0]
+            tensor_ref = self.tensor_info[name][0]
+            repr = self.tensor_info[name][2]
+            self.clusters[cluster].add_tensor(tensor_ref, repr)
+        
+        for cluster, rate in zip(self.clusters, centers):
+            pert_dict = {
+                "name": "BitwisePert",
+                "p":rate}
+            pert = P.construct_pert(pert_dict)
+            cluster.set_perturb([pert])
+
+    def toggle_clustering(self):
+        """
+        Turns on or off clustering, which groups tensor perturbations with 
+        nearby perturbation rates. 
+        """
+        self.clustering = not self.clustering
+        return self.clustering
