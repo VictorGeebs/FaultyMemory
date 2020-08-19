@@ -78,3 +78,10 @@ All notable changes to this project will be documented in this file.
 ## [0.1.6] - 2020-08-10
 ### Added
 - Json save/load function complete
+
+## [0.1.7] - 2020-08-19
+### Added
+- K-means clustering for bitwise perturbations
+- Tutorial added
+- he-scaling option added for bitwise perturbation
+- Clustering now saved in JSON configurations

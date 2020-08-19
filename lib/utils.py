@@ -63,13 +63,15 @@ def test_accuracy(net, testloader):
         for data in testloader:
             samples, labels = data
             outputs = net(samples)
-            net.restore()
+            #net.restore()
             _, predicted = torch.max(outputs, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
             print("running acc: ", correct/total)
+            break
     accuracy = correct/total
     return accuracy
+
 
 def train_net(net, optimizer, criterion, trainloader, nb_epochs, prt=True):
     """

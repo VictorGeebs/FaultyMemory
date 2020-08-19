@@ -73,3 +73,13 @@ class Cluster():
 
     def add_perturbation(self, perturb):
         self.perturb.append(perturb)
+
+    def remove_perturbation(self, perturb):
+        self.perturb.pop(perturb, None)
+        
+    def set_perturb_rate(self, pert_rate):
+        for i, p in enumerate(pert_rate):
+            self.perturb[i].set_perturb_rate(p)
+    
+    def set_perturb(self, pert_list):
+        self.perturb = pert_list
