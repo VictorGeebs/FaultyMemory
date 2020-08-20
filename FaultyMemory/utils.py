@@ -52,7 +52,7 @@ class R2Dataset(Dataset):
     def __getitem__(self, idx):
         return self.samples[idx]
 
-def test_accuracy(net, testloader):
+def test_accuracy(net, testloader) ->float:
     """
     A basic test function to test the accuracy of a network. \n
     This function might need modification depending on the type of label you wish to have.
@@ -68,7 +68,7 @@ def test_accuracy(net, testloader):
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
             print("running acc: ", correct/total)
-            break
+            # break
     accuracy = correct/total
     return accuracy
 

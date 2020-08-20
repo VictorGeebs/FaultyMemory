@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import copy
 import numpy as np
-import perturbator as P
+import FaultyMemory.perturbator as P
 
 
 class Cluster():

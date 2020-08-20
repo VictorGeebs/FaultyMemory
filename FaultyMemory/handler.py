@@ -4,18 +4,20 @@ import torch.nn.functional as F
 import copy
 import math
 import numpy as np
-import perturbator as P
-import representation as R
-from hook import *
-import cluster as C
+import FaultyMemory.perturbator as P
+import FaultyMemory.representation as R
+from FaultyMemory.hook import *
+import FaultyMemory.cluster as C
 import time
 import json
 from scipy.cluster.vq import kmeans, vq
+
 
 class Handler():
     """
     Class in charge of saving tensors, storing information about them, activation perturbations and clusters.
     """
+
     def __init__(self, net, clusters=None):
         self.net = net
         self.saved_net = copy.deepcopy(net)
@@ -41,7 +43,7 @@ class Handler():
         """
         self.save_net()
         self.perturb_tensors()
-        out =  self.net.forward(x)
+        out = self.net.forward(x)
         return out
 
     def restore(self):
@@ -56,7 +58,7 @@ class Handler():
             perturbed = perturbed.flatten()
             saved = saved.flatten()
             for i, _ in enumerate(perturbed.data):
-                    perturbed.data[i] = saved.data[i]
+                perturbed.data[i] = saved.data[i]
             perturbed = perturbed.view(perturbed_shape)
             saved = saved.view(saved_shape)
 
@@ -65,7 +67,7 @@ class Handler():
             net_dict = dict(self.net.named_parameters())
             try:
                 assert name in net_dict, "Specified name not in net.named_parameters and no reference given, cannot add this tensor"
-                reference = dict(self.net.named_parameters())[name]    
+                reference = dict(self.net.named_parameters())[name]
             except AssertionError as id:
                 print(id)
                 return
@@ -123,7 +125,7 @@ class Handler():
         for module in dict(self.net.named_modules()):
             self.remove_activation(module)
 
-    def init_clusters(self, clusters=None, modules=None): # TODO: DEPRECATED
+    def init_clusters(self, clusters=None, modules=None):  # TODO: DEPRECATED
         """
         This function is deprecated and should not be called
         Assigns modules to specified clusters.\n
@@ -134,19 +136,20 @@ class Handler():
         """
         if modules is None:
             if clusters is None:
-                clusters = self.clusters   
+                clusters = self.clusters
             modules = list(self.net.children())
             nb_clust = len(clusters)
             nb_modules = len(modules)
             n = math.ceil(nb_modules/nb_clust)
-            groups = [modules[i:i + n] for i in range(0, len(modules), n)]  # Splitting the modules in equal groups according to nb of clusters and nb of modules
+            # Splitting the modules in equal groups according to nb of clusters and nb of modules
+            groups = [modules[i:i + n] for i in range(0, len(modules), n)]
             modules = groups
 
         for i, cluster in enumerate(clusters):
             for module in modules[i]:  # Watch out for out of bounds error
                 cluster.add_module(module)
-        
-    def move_tensor(self, destination_cluster, tensor): # DEPRECATED
+
+    def move_tensor(self, destination_cluster, tensor):  # DEPRECATED
         """
         Moves a tensor from its cluster to the destination cluster
         """
@@ -155,7 +158,7 @@ class Handler():
                 cluster.remove_tensor(tensor)
         destination_cluster.add_tensor(tensor)
 
-    def move_module(self, destination_cluster, module): # DEPRECATED
+    def move_module(self, destination_cluster, module):  # DEPRECATED
         """
         Moves a module from its cluster to the destination cluster
         """
@@ -163,7 +166,7 @@ class Handler():
             cluster.remove_module(module)
         destination_cluster.add_module(module)
 
-    def move_activation(self, destination_cluster, module): # DEPRECATED
+    def move_activation(self, destination_cluster, module):  # DEPRECATED
         for cluster in self.clusters:
             cluster.remove_activation(module)
         destination_cluster.add_activation(module)
@@ -227,7 +230,7 @@ class Handler():
                     for pert_dict in pert_list:
                         pert = P.construct_pert(pert_dict)
                         perturbs.append(pert)
-                    
+
                 for param in list(self.net.named_parameters()):
                     tensor_name = param[0]
                     self.tensor_info[tensor_name] = (param[1], perturbs, repr)
@@ -248,14 +251,14 @@ class Handler():
                             pert = P.construct_pert(pert_dict)
                             perturbs.append(pert)
                     else:
-                        perturbs=None
-                    
+                        perturbs = None
+
                     current_mod = dict(self.net.named_modules())[module_name]
                     for param_key in dict(current_mod.named_parameters()):
                         full_key = module_name + '.' + param_key
                         tens = dict(current_mod.named_parameters())[param_key]
                         self.tensor_info[full_key] = (tens, perturbs, repr)
-                        
+
             # Tensors
             tensors = weight_dict['tensors']
             if tensors is not None:
@@ -272,7 +275,7 @@ class Handler():
                             pert = P.construct_pert(pert_dict)
                             perturbs.append(pert)
                     else:
-                        perturbs=None
+                        perturbs = None
 
                     tens = dict(self.net.named_parameters())[tensor_name]
                     self.tensor_info[tensor_name] = (tens, perturbs, repr)
@@ -294,7 +297,8 @@ class Handler():
 
                 for name, module in self.net.named_modules():
                     hook = Hook(perturbs, repr)
-                    self.hooks[name] = module.register_forward_hook(hook.hook_fn)
+                    self.hooks[name] = module.register_forward_hook(
+                        hook.hook_fn)
                     self.acti_info[name] = (perturbs, repr)
 
             # Modules batch
@@ -311,12 +315,13 @@ class Handler():
                     for pert_dict in pert_list:
                         pert = P.construct_pert(pert_dict)
                         perturbs.append(pert)
-                    
+
                     current_mod = dict(self.net.named_modules())[module_name]
                     hook = Hook(perturbs, repr)
-                    self.hooks[module_name] = current_mod.register_forward_hook(hook.hook_fn)
+                    self.hooks[module_name] = current_mod.register_forward_hook(
+                        hook.hook_fn)
                     self.acti_info[module_name] = (perturbs, repr)
-        
+
         # Cluster assignement
         self.assign_clusters()
 
@@ -326,30 +331,30 @@ class Handler():
 
     def to_dict(self):
         handler_dict = {
-            "nb_clusters" : len(self.clusters)
+            "nb_clusters": len(self.clusters)
         }
-        
+
         # Tensors
         tensor_list = []
         for name in self.tensor_info:
             tensor_list.append(self.tensor_to_json(name))
-        
+
         handler_dict["weights"] = {
-            "net" : None,
-            "modules" : None, 
-            "tensors" : tensor_list
+            "net": None,
+            "modules": None,
+            "tensors": tensor_list
         }
 
         # Activations
         acti_list = []
         for name in self.acti_info:
             acti_list.append(self.acti_to_json(name))
-        
+
         handler_dict["activations"] = {
-            "net" : None,
-            "modules" : acti_list
+            "net": None,
+            "modules": acti_list
         }
-        return handler_dict    
+        return handler_dict
 
     def tensor_to_json(self, tensor_name):
         """
@@ -361,12 +366,13 @@ class Handler():
         repr = tup[2]
 
         repr_data = repr.to_json() if repr is not None else None
-        pert_data = [o.to_json() for o in pert_list] if pert_list is not None else None
+        pert_data = [o.to_json()
+                     for o in pert_list] if pert_list is not None else None
 
         tensor_dict = {
-            "name" : name,
-            "repr" : repr_data,
-            "perturb" : pert_data
+            "name": name,
+            "repr": repr_data,
+            "perturb": pert_data
         }
 
         return tensor_dict
@@ -381,12 +387,13 @@ class Handler():
         repr = tup[1]
 
         repr_data = repr.to_json() if repr is not None else None
-        pert_data = [o.to_json() for o in pert_list] if pert_list is not None else None
+        pert_data = [o.to_json()
+                     for o in pert_list] if pert_list is not None else None
 
         acti_dict = {
-            "name" : name,
-            "repr" : repr_data,
-            "perturb" : pert_data
+            "name": name,
+            "repr": repr_data,
+            "perturb": pert_data
         }
 
         return acti_dict
@@ -415,8 +422,9 @@ class Handler():
             else:
                 running_perts[pert_names].append((name, prob_list))
         running_perts.pop('')
-        assert len(running_perts) <= len(self.clusters), "More different perturbations than clusters available, cannot assign tensors to clusters"
-        
+        assert len(running_perts) <= len(
+            self.clusters), "More different perturbations than clusters available, cannot assign tensors to clusters"
+
         # ONLY BITWISEPERT FOR THE TIME BEING
         bitwises = running_perts['BitwisePert']
         bitwise_probs = [item[1][0] for item in bitwises]
@@ -428,11 +436,11 @@ class Handler():
             tensor_ref = self.tensor_info[name][0]
             repr = self.tensor_info[name][2]
             self.clusters[cluster].add_tensor(tensor_ref, repr)
-        
+
         for cluster, rate in zip(self.clusters, centers):
             pert_dict = {
                 "name": "BitwisePert",
-                "p":rate}
+                "p": rate}
             pert = P.construct_pert(pert_dict)
             cluster.set_perturb([pert])
 

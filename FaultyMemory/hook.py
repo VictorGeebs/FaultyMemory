@@ -1,5 +1,5 @@
-from perturbator import *
-from representation import *
+from FaultyMemory.perturbator import *
+from FaultyMemory.representation import *
 
 class Hook():
     """

@@ -3,7 +3,7 @@ import torch.nn as nn
 import random
 import numpy as np
 import math as math
-from representation import *
+from FaultyMemory.representation import *
 from json import JSONEncoder
 
 class Perturbator():
