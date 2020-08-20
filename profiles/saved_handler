@@ -381,21 +381,6 @@
 	},
 	"activations": {
 		"net": null,
-		"modules": [
-			{
-				"name": "conv_last",
-				"repr": {
-					"name": "Representation",
-					"width": 5,
-					"unsigned": false
-				},
-				"perturb": [
-					{
-						"name": "Zeros",
-						"p": 0.1
-					}
-				]
-			}
-		]
+		"modules": []
 	}
 }

@@ -13,22 +13,38 @@
             "perturb":[
                 {
                     "name":"BitwisePert",
-                    "p":0.1
+                    "p":0.2
                 }
             ]
         },
         "modules": [
             {
+                "name":"conv_last",
+                "repr": null,
+                "perturb":[null]
+            },
+            {
                 "name":"bn_last",
                 "repr": null,
-                "perturb":null
+                "perturb":[null]
             }
         ],
-        "tensors": null
+        "tensors": [
+            {
+                "name":"filter1",
+                "repr":null,
+                "perturb":[
+                    {
+                        "name":"Zeros",
+                        "p":0.5
+                    }
+                ]
+            }
+        ]
     },
     "activations":
     {
         "net": null,
-        "modules": null
+        "modules":null
     }
 }
