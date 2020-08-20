@@ -39,7 +39,7 @@ of saving the types of perturbation and the representation you wish to use in
 your model. To do so, simply instanciate a Handler object, passing your network
 as a constructor parameter. 
 """
-import handler as H
+import FaultyMemory.handler as H
 
 my_handler = H.Handler(net)
 
@@ -60,8 +60,8 @@ Let's say we have a simple network and its entirety is using the same
 representation and will be under the same type of perturbation.
 We will start by creating a perturbation instance and a representation instance.
 """
-import perturbator as P
-import representation as R
+import FaultyMemory.perturbator as P
+import FaultyMemory.representation as R
 
 zero_pert = P.Zeros(p=0.1) # A stuck-at-zero perturbation with a probability of p
 int5_repr = R.Representation(width=5, unsigned=False) # A 5 bit wide signed integer representation
@@ -187,7 +187,7 @@ and for the time being we adress everything by tensor instead of looking to
 group tensors to simplify the saved file.
 """
 
-import utils as utils
+import FaultyMemory.utils as utils
 accuracy = utils.test_accuracy(my_handler, testloader)
 
 config_path = './profiles/saved_handler.json'

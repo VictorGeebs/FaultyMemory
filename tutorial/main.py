@@ -7,10 +7,10 @@ import torch.optim as optim
 import copy
 import math
 import numpy as np
-import perturbator as P
-import representation as R
-import cluster as C
-import handler as H
+import FaultyMemory.perturbator as P
+import FaultyMemory.representation as R
+import FaultyMemory.cluster as C
+import FaultyMemory.handler as H
 import random
 import json
 
