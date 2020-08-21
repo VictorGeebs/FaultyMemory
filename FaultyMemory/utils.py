@@ -11,9 +11,9 @@ import math
 import random
 import copy
 import numpy as np
-import perturbator as P
-import cluster as C
-import handler as H
+import FaultyMemory.perturbator as P
+import FaultyMemory.cluster as C
+import FaultyMemory.handler as H
 import time
 
 
@@ -157,3 +157,9 @@ class Xor(nn.Module):
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         return x
+
+def listify(obj: object):
+    if isinstance(obj, list):
+        return obj
+    else:
+        return [obj]

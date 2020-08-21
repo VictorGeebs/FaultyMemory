@@ -3,8 +3,14 @@ import torch.nn as nn
 import random
 import numpy as np
 import math as math
-from FaultyMemory.representation import *
+import warnings
 from json import JSONEncoder
+
+from FaultyMemory.representation import *
+
+from typing import Optional
+
+BINARY_SCALING = ['none', 'he', 'mean']
 
 class Perturbator():
     """
@@ -47,7 +53,7 @@ class Perturbator():
         return dict
 
 class BitwisePert(Perturbator):
-    def __init__(self, p=1):
+    def __init__(self, p: float = 1.):
         assert (p >= 0. and p <= 1.), "probability p must be between 0 and 1"
         self.p = p
     
@@ -57,8 +63,8 @@ class BitwisePert(Perturbator):
     def __repr__(self):
         return self.__str__()
 
-    def perturb(self, param, repr=None, scaling=False):
-        param_shape = param.shape
+    def perturb(self, param: torch.tensor, repr: Optional[Perturbator] = None, scaling: Optional[str] = 'none'):
+        param_shape, param_mean = param.shape, torch.mean(param).item()
         param = param.flatten()
         mask = self.generate_tensor_mask_bit(repr.width, param.shape[0])
         data = param.detach().numpy()
@@ -68,10 +74,17 @@ class BitwisePert(Perturbator):
         data = repr.apply_tensor_mask(data, mask)
         for i, value in enumerate(data):
             param.data[i] = value
-        if scaling == True:
-            #print("scaling, ", scaling)
-            he_scaling = math.sqrt(2./(param_shape[1]*param_shape[2]*param_shape[3]))
-            param *= he_scaling
+
+        if scaling != 'none':
+            with torch.no_grad():
+                if scaling == 'he':
+                    he_scaling = math.sqrt(2./(np.prod(param_shape)))
+                    param *= he_scaling
+                elif scaling == 'mean':
+                    param *= param_mean
+                else:
+                    warnings.warn(f'Scaling is not one of {BINARY_SCALING}', UserWarning)
+
         param = param.view(param_shape)
 
     def generate_mask(self, width):
