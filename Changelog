@@ -85,3 +85,11 @@ All notable changes to this project will be documented in this file.
 - Tutorial added
 - he-scaling option added for bitwise perturbation
 - Clustering now saved in JSON configurations
+
+## [0.1.8] - 2020-??
+### Added
+
+### Changed
+- All files linted
+- handler.add_network() and remove_network renamed to add_all_tensors and remove_all_tensors for clarity
+- Utility functions hook_all_fwd and hook_print_fwd moved to utils.py
