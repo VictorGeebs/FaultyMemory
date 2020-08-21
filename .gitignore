@@ -5,4 +5,4 @@ profiles/extra.txt
 .pytest_cache/*
 data/*
 */__pycache__/*
-suggestions
+*.pth

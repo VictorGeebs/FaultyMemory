@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import math
 import random
 import numpy as np
-import utils
+import FaultyMemory.utils as utils
 
 PATH = './models/xor_net.pth'
 

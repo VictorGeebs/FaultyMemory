@@ -62,7 +62,7 @@ def test_accuracy(net, testloader):
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
             print("running acc: ", correct/total)
-            break
+            # break
     accuracy = correct/total
     return accuracy
 

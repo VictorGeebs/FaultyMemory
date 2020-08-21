@@ -12,10 +12,10 @@ import math
 import random
 import copy
 import numpy as np
-import perturbator as P
-import cluster as C
-import handler as H
-import utils
+import FaultyMemory.perturbator as P
+import FaultyMemory.cluster as C
+import FaultyMemory.handler as H
+import FaultyMemory.utils as utils
 import wrn_mcdonnell_manual as McDo
 import Dropit
 from collections import OrderedDict

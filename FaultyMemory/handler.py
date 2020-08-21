@@ -1,8 +1,11 @@
 import copy
-import perturbator as P
-import representation as R
-from hook import Hook
-import cluster as C
+import math
+import numpy as np
+import FaultyMemory.perturbator as P
+import FaultyMemory.representation as R
+from FaultyMemory.hook import *
+import FaultyMemory.cluster as C
+import time
 import json
 from scipy.cluster.vq import kmeans, vq
 
@@ -12,6 +15,7 @@ class Handler():
     Class in charge of saving tensors, storing information about them,
     activation perturbations and clusters.
     """
+
     def __init__(self, net, clusters=None):
         self.net = net
         self.saved_net = copy.deepcopy(net)
@@ -62,7 +66,7 @@ class Handler():
             net_dict = dict(self.net.named_parameters())
             try:
                 assert name in net_dict, "Specified name not in net.named_parameters and no reference given, cannot add this tensor"
-                reference = dict(self.net.named_parameters())[name]    
+                reference = dict(self.net.named_parameters())[name]
             except AssertionError as id:
                 print(id)
                 return
@@ -119,6 +123,55 @@ class Handler():
     def clear_network_activations(self):
         for module in dict(self.net.named_modules()):
             self.remove_activation(module)
+<<<<<<< HEAD:lib/handler.py
+=======
+
+    def init_clusters(self, clusters=None, modules=None):  # TODO: DEPRECATED
+        """
+        This function is deprecated and should not be called
+        Assigns modules to specified clusters.\n
+        Clusters should contain the list of clusters you wish to assign modules to.\n
+        Modules should be a list of lists of modules, the first list being the modules to assign to clusters[0] and so on.\n
+        The list of modules in modules[i] will be assigned to clusters[i].\n
+        If no modules or clusters are specified, it will split all modules in order and distribute them across all clusters in the handler equally.
+        """
+        if modules is None:
+            if clusters is None:
+                clusters = self.clusters
+            modules = list(self.net.children())
+            nb_clust = len(clusters)
+            nb_modules = len(modules)
+            n = math.ceil(nb_modules/nb_clust)
+            # Splitting the modules in equal groups according to nb of clusters and nb of modules
+            groups = [modules[i:i + n] for i in range(0, len(modules), n)]
+            modules = groups
+
+        for i, cluster in enumerate(clusters):
+            for module in modules[i]:  # Watch out for out of bounds error
+                cluster.add_module(module)
+
+    def move_tensor(self, destination_cluster, tensor):  # DEPRECATED
+        """
+        Moves a tensor from its cluster to the destination cluster
+        """
+        for cluster in self.clusters:
+            if cluster.contains(tensor):
+                cluster.remove_tensor(tensor)
+        destination_cluster.add_tensor(tensor)
+
+    def move_module(self, destination_cluster, module):  # DEPRECATED
+        """
+        Moves a module from its cluster to the destination cluster
+        """
+        for cluster in self.clusters:
+            cluster.remove_module(module)
+        destination_cluster.add_module(module)
+
+    def move_activation(self, destination_cluster, module):  # DEPRECATED
+        for cluster in self.clusters:
+            cluster.remove_activation(module)
+        destination_cluster.add_activation(module)
+>>>>>>> 8abf7912f64be607e93833d92992894ae20cd8bd:FaultyMemory/handler.py
 
     def save_net(self):
         """
@@ -181,7 +234,7 @@ class Handler():
                     for pert_dict in pert_list:
                         pert = P.construct_pert(pert_dict)
                         perturbs.append(pert)
-                    
+
                 for param in list(self.net.named_parameters()):
                     tensor_name = param[0]
                     self.tensor_info[tensor_name] = (param[1], perturbs, repr)
@@ -209,7 +262,7 @@ class Handler():
                         full_key = module_name + '.' + param_key
                         tens = dict(current_mod.named_parameters())[param_key]
                         self.tensor_info[full_key] = (tens, perturbs, repr)
-                        
+
             # Tensors
             tensors = weight_dict['tensors']
             if tensors is not None:
@@ -248,7 +301,8 @@ class Handler():
 
                 for name, module in self.net.named_modules():
                     hook = Hook(perturbs, repr)
-                    self.hooks[name] = module.register_forward_hook(hook.hook_fn)
+                    self.hooks[name] = module.register_forward_hook(
+                        hook.hook_fn)
                     self.acti_info[name] = (perturbs, repr)
 
             # Modules batch
@@ -268,7 +322,8 @@ class Handler():
 
                     current_mod = dict(self.net.named_modules())[module_name]
                     hook = Hook(perturbs, repr)
-                    self.hooks[module_name] = current_mod.register_forward_hook(hook.hook_fn)
+                    self.hooks[module_name] = current_mod.register_forward_hook(
+                        hook.hook_fn)
                     self.acti_info[module_name] = (perturbs, repr)
 
         # Cluster assignement
@@ -316,7 +371,8 @@ class Handler():
         repr = tup[2]
 
         repr_data = repr.to_json() if repr is not None else None
-        pert_data = [o.to_json() for o in pert_list] if pert_list is not None else None
+        pert_data = [o.to_json()
+                     for o in pert_list] if pert_list is not None else None
 
         tensor_dict = {
             "name": name,
@@ -337,7 +393,8 @@ class Handler():
         repr = tup[1]
 
         repr_data = repr.to_json() if repr is not None else None
-        pert_data = [o.to_json() for o in pert_list] if pert_list is not None else None
+        pert_data = [o.to_json()
+                     for o in pert_list] if pert_list is not None else None
 
         acti_dict = {
             "name": name,
@@ -363,7 +420,6 @@ class Handler():
                 for pert in pert_list:
                     pert_names.append(pert.__class__.__name__)
                     prob_list.append(pert.p)
-
             pert_names = '_'.join(pert_names)
             if pert_names not in running_perts:
                 running_perts[pert_names] = [(name, prob_list)]

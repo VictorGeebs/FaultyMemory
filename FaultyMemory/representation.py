@@ -10,7 +10,7 @@ class Representation():
     def __init__(self, width=8, unsigned=True):
         self.width = width
         self.unsigned = unsigned
-
+    
     def __str__(self):
         print("Representation")
         return ''
