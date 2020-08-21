@@ -1,17 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision import datasets, transforms as T
-import torch.optim as optim
-import copy
-import math
-import numpy as np
-import FaultyMemory.perturbator as P
-import FaultyMemory.representation as R
 import FaultyMemory.cluster as C
 import FaultyMemory.handler as H
-import random
-import json
 
 import wrn_mcdonnell_manual as McDo
 import Dropit

@@ -1,26 +1,11 @@
-import os
-import sys
 import torch
 import torchvision
 import torchvision.transforms as transforms
-from torch.utils.data import Dataset
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-import matplotlib.pyplot as plt
-import math
-import random
-import copy
-import numpy as np
-import FaultyMemory.perturbator as P
-import FaultyMemory.cluster as C
 import FaultyMemory.handler as H
 import FaultyMemory.utils as utils
 import wrn_mcdonnell_manual as McDo
 import Dropit
 from collections import OrderedDict
-import time
-import json
 
 PATH = './models/mcdonnell.pth'
 
@@ -30,20 +15,18 @@ transform = transforms.Compose(
     [transforms.ToTensor(),
      transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))])
 
-#transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+# transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
 testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
 testloader = torch.utils.data.DataLoader(testset, batch_size=1024, shuffle=False, num_workers=2)
 
 
-
-#init params: depth=28, width=10
+# init params: depth=28, width=10
 net = McDo.WRN_McDonnell(depth=28, width=10, num_classes=10, dropit=False, actprec=3)
 state_dict = torch.load(PATH, map_location=torch.device('cpu'))['model_state_dict']
 lanmax_state_space = torch.load(PATH, map_location=torch.device('cpu'))['lanmax_state_space']
 
 net.load_state_dict(state_dict)
-
 
 
 handler = H.Handler(net)
@@ -84,7 +67,7 @@ for scaling in [True, False]:
     acc_dict[scaling] = avg_list
 
 print("Accuracies", acc_dict)
-    
+
 
 """
 probs = np.logspace(-0.1, -2.5, 20)

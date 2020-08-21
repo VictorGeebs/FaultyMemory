@@ -1,15 +1,6 @@
-import os
-import sys
 import torch
-import torchvision
-from torch.utils.data import Dataset
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
-import matplotlib.pyplot as plt
-import math
-import random
-import numpy as np
 import FaultyMemory.utils as utils
 
 PATH = './models/xor_net.pth'
@@ -41,5 +32,5 @@ print('Accuracy of the network: %3.2f %%' % (100 * accuracy))
 
 # Saving net
 if accuracy > init_accuracy:
-   print("saving net")
-   torch.save(net.state_dict(), PATH)
+    print("saving net")
+    torch.save(net.state_dict(), PATH)

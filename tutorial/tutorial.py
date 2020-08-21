@@ -10,7 +10,7 @@ faults anywhere in your network or module.
 import torch
 import torchvision
 import torchvision.transforms as transforms
-import Dropit as Dropit  # These imports define the structure of the network we will be using 
+import Dropit as Dropit  # These imports define the structure of the network we will be using
 import wrn_mcdonnell_manual as McDo 
 
 
