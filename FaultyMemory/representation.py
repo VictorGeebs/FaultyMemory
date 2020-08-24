@@ -18,6 +18,14 @@ class Representation():
     def __repr__(self):
         return self.__str__()
 
+    def convert_tensor(self, tensor):
+        param_shape = tensor.shape
+        param = tensor.flatten()
+        data = param.detach().numpy()
+        for i, value in enumerate(data):
+            param.data[i] = self.convert_to_repr(value)
+        tensor = param.view(param_shape)
+
     def convert_to_repr(self, value):
         """
         Converts a value to the representation and returns it as its numpy
@@ -68,6 +76,9 @@ class BinaryRepresentation(Representation):
         super(BinaryRepresentation, self).__init__()
         self.width = 1
         self.unsigned = unsigned
+
+    def __str__(self):
+        return "Binary Representation"
 
     def convert_to_repr(self, value):
         if self.unsigned is False:

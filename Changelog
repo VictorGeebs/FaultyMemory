@@ -86,10 +86,16 @@ All notable changes to this project will be documented in this file.
 - he-scaling option added for bitwise perturbation
 - Clustering now saved in JSON configurations
 
-## [0.1.8] - 2020-??
+## [0.1.8] - 2020-08-24
 ### Added
+- Tests folder with pytest
 
 ### Changed
 - All files linted
 - handler.add_network() and remove_network renamed to add_all_tensors and remove_all_tensors for clarity
 - Utility functions hook_all_fwd and hook_print_fwd moved to utils.py
+- Representations are now applied regardless of perturbations
+- Filestructure remake and packaging
+- basic tests now in test folder
+- Tutorial moved
+

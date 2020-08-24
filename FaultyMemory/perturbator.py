@@ -61,9 +61,6 @@ class BitwisePert(Perturbator):
         param = param.flatten()
         mask = self.generate_tensor_mask_bit(repr.width, param.shape[0])
         data = param.detach().numpy()
-        for i, _ in enumerate(data):
-            data[i] = repr.convert_to_repr(data[i])
-        data = data.astype('int')
         data = repr.apply_tensor_mask(data, mask)
         for i, value in enumerate(data):
             param.data[i] = value
@@ -81,9 +78,6 @@ class BitwisePert(Perturbator):
 
     def generate_tensor_mask_bit(self, width, tensor_length):
         mask = np.random.binomial(1, self.p, (width, tensor_length))
-        print("length: ", tensor_length)
-        print("count: ", np.count_nonzero(mask))
-        print(np.count_nonzero(mask)/tensor_length, "%")
         return np.packbits(mask, axis=0, bitorder='little')[0]
 
 

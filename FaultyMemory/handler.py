@@ -123,55 +123,6 @@ class Handler():
     def clear_network_activations(self):
         for module in dict(self.net.named_modules()):
             self.remove_activation(module)
-<<<<<<< HEAD:lib/handler.py
-=======
-
-    def init_clusters(self, clusters=None, modules=None):  # TODO: DEPRECATED
-        """
-        This function is deprecated and should not be called
-        Assigns modules to specified clusters.\n
-        Clusters should contain the list of clusters you wish to assign modules to.\n
-        Modules should be a list of lists of modules, the first list being the modules to assign to clusters[0] and so on.\n
-        The list of modules in modules[i] will be assigned to clusters[i].\n
-        If no modules or clusters are specified, it will split all modules in order and distribute them across all clusters in the handler equally.
-        """
-        if modules is None:
-            if clusters is None:
-                clusters = self.clusters
-            modules = list(self.net.children())
-            nb_clust = len(clusters)
-            nb_modules = len(modules)
-            n = math.ceil(nb_modules/nb_clust)
-            # Splitting the modules in equal groups according to nb of clusters and nb of modules
-            groups = [modules[i:i + n] for i in range(0, len(modules), n)]
-            modules = groups
-
-        for i, cluster in enumerate(clusters):
-            for module in modules[i]:  # Watch out for out of bounds error
-                cluster.add_module(module)
-
-    def move_tensor(self, destination_cluster, tensor):  # DEPRECATED
-        """
-        Moves a tensor from its cluster to the destination cluster
-        """
-        for cluster in self.clusters:
-            if cluster.contains(tensor):
-                cluster.remove_tensor(tensor)
-        destination_cluster.add_tensor(tensor)
-
-    def move_module(self, destination_cluster, module):  # DEPRECATED
-        """
-        Moves a module from its cluster to the destination cluster
-        """
-        for cluster in self.clusters:
-            cluster.remove_module(module)
-        destination_cluster.add_module(module)
-
-    def move_activation(self, destination_cluster, module):  # DEPRECATED
-        for cluster in self.clusters:
-            cluster.remove_activation(module)
-        destination_cluster.add_activation(module)
->>>>>>> 8abf7912f64be607e93833d92992894ae20cd8bd:FaultyMemory/handler.py
 
     def save_net(self):
         """
@@ -193,6 +144,10 @@ class Handler():
                 tens = item[0]
                 pert = item[1]
                 repr = item[2]
+                print("before: ", tens)
+                if repr is not None:
+                    repr.convert_tensor(tens)
+                print("after: ", tens)
                 if pert is not None:
                     for perturb in pert:
                         if perturb is not None:
