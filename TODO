@@ -23,3 +23,6 @@
 - [ ] Utils test_acc resampling with same pert
 - [ ] Quantization - he scaling - mean scaling
 - [ ] Clustering - dont worry about it
+- [ ] Add metrics to the handler: energy consumption, total number of bits
+- [ ] Nice optional perk: visualizations/logging. Logging will be useful for benchmarks/automated tests. E.g. a first log may be the timing for funct calls.
+- [ ] Test of fire: implement a paper's proposed representation.
