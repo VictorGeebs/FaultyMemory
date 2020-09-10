@@ -31,7 +31,7 @@ class Perturbator():
         return self.__str__
 
     def perturb(self, params, repr=None, scaling=False):
-        """
+        r"""
         This function is the transformation that is applied to the data when
         the perturbator is called in  __call__(self, params).
         Should be overridden by all subclasses.
@@ -64,14 +64,14 @@ class BitwisePert(Perturbator):
         return self.__str__()
 
     def perturb(self, param: torch.tensor, repr: Optional[Perturbator] = None, scaling: Optional[str] = 'none'):
-        param_shape, param_mean = param.shape, torch.mean(param).item()
+        param_shape, param_mean = param.shape, torch.mean(torch.abs(param)).item()
         param = param.flatten()
-        mask = self.generate_tensor_mask_bit(repr.width, param.shape[0])
-        data = param.detach().numpy()
+        self.mask = self.generate_tensor_mask_bit(repr.width, param.shape[0])
+        data = param.detach().cpu().numpy()
         for i, _ in enumerate(data):
             data[i] = repr.convert_to_repr(data[i])
         data = data.astype('int')
-        data = repr.apply_tensor_mask(data, mask)
+        data = repr.apply_tensor_mask(data, self.mask)
         for i, value in enumerate(data):
             param.data[i] = value
 
@@ -87,18 +87,20 @@ class BitwisePert(Perturbator):
 
         param = param.view(param_shape)
 
-    def generate_mask(self, width):
+    def generate_mask(self, width: int):
         mask = np.zeros(8, dtype=int)
         for i in range(1, width+1):
             if (random.random() <= self.p):
                 mask[-i] = 1
         return np.packbits(mask)[0]
 
-    def generate_tensor_mask_bit(self, width, tensor_length):
+    def generate_tensor_mask_bit(self, width: int, tensor_length: int):
+        r""" Generate a fault mask the same size as `tensor_length` with precision `width``
+
+        Also set the attribute `effective_p` for bookeeping
+        """
         mask = np.random.binomial(1, self.p, (width, tensor_length))
-        print("length: ", tensor_length)
-        print("count: ", np.count_nonzero(mask))
-        print(np.count_nonzero(mask)/tensor_length, "%")
+        self.effective_p = np.count_nonzero(mask)/tensor_length
         return np.packbits(mask, axis=0, bitorder='little')[0]
 
 class Zeros(Perturbator):

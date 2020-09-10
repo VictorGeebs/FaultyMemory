@@ -7,6 +7,7 @@ import numpy as np
 import time
 import json
 from scipy.cluster.vq import kmeans, vq
+from tqdm import tqdm
 
 import FaultyMemory.perturbator as P
 import FaultyMemory.representation as R
@@ -195,7 +196,7 @@ class Handler():
             for cluster in self.clusters:
                 cluster.perturb_tensors()
         else:
-            for name, item in self.tensor_info.items():
+            for name, item in tqdm(self.tensor_info.items(), 'Perturbing tensors'):
                 tens = item[0]
                 pert = item[1]
                 repr = item[2]
@@ -460,3 +461,14 @@ class Handler():
         """
         self.clustering = not self.clustering
         return self.clustering
+
+    def list_fault_masks(self):
+        masks = {}
+        for name, item in tqdm(self.tensor_info.items(), 'Perturbing tensors'):
+            tens = item[0]
+            pert = item[1]
+            repr = item[2]
+            if pert is not None:
+                for perturb in pert:
+                    if perturb is not None:
+                        masks[name] = perturb.mask
