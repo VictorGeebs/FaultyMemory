@@ -1,13 +1,7 @@
-import os
-import sys
 import torch
-import torchvision
 from torch.utils.data import Dataset
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
-import matplotlib.pyplot as plt
-import math
 import random
 import copy
 import numpy as np
@@ -21,7 +15,8 @@ from tqdm import tqdm
 class R2Dataset(Dataset):
     """
     A dataset for testing purposes.
-    This dataset contains values of R^2 with labels as the XOR of the sign of those two values.
+    This dataset contains values of R^2 with labels as the XOR of the sign of
+    those two values.
     """
 
     def __init__(self, dim=1, len=1):
@@ -58,7 +53,8 @@ class R2Dataset(Dataset):
 def test_accuracy(net, testloader) -> float:
     """
     A basic test function to test the accuracy of a network. \n
-    This function might need modification depending on the type of label you wish to have.
+    This function might need modification depending on the type of label you
+    wish to have.
     """
     correct = 0
     total = 0
@@ -103,7 +99,8 @@ def train_net(net, optimizer, criterion, trainloader, nb_epochs, prt=True):
 def generate_graphs(net, testloader, probs):  # DEPRECATED
     """
     This function is deprecated because of the use of generate_point
-    This function was originally designed to simulate datapoints for an entire networked perturbed the same way
+    This function was originally designed to simulate datapoints for an entire
+    networked perturbed the same way
     """
     clean_accuracy = []
     pert_accuracy = []
@@ -138,7 +135,8 @@ def generate_point(net, testloader, prob):  # DEPRECATED
 
     net_both = copy.deepcopy(net)
     pert_both = P.Zeros(prob)
-    c_both = C.Cluster([pert_both], networks=[net_both], network_activations=[net_both])
+    c_both = C.Cluster([pert_both], networks=[net_both],
+                       network_activations=[net_both])
     handler_both = H.Handler(net_both, [c_both])
 
     clean_accuracy = test_accuracy(net, testloader)

@@ -1,5 +1,3 @@
-import torch
-import torch.nn as nn
 import random
 import numpy as np
 import math as math
@@ -14,14 +12,14 @@ BINARY_SCALING = ['none', 'he', 'mean']
 
 class Perturbator():
     """
-    Base class for all perturbators that modelize calculation, memory or 
+    Base class for all perturbators that modelize calculation, memory or
     circuit failure.
     """
     def __init__(self, p=1.):
         assert (p >= 0. and p <= 1.), "probability p must be between 0 and 1"
         self.p = p
 
-    def __call__(self, params, repr=None, scaling=False): # Make flexible for calling with hooks or with only a tensor? __call__(self, params=None, module=None, in=None, out=None) Naming gets out of wack
+    def __call__(self, params, repr=None, scaling=False):  # Make flexible for calling with hooks or with only a tensor? __call__(self, params=None, module=None, in=None, out=None) Naming gets out of wack
         self.perturb(params, repr, scaling)
 
     def __str__(self):
@@ -35,8 +33,8 @@ class Perturbator():
         This function is the transformation that is applied to the data when
         the perturbator is called in  __call__(self, params).
         Should be overridden by all subclasses.
-        params should be the parameters that you wish to be modified, by calling
-        net.parameters()
+        params should be the parameters that you wish to be modified, by
+        calling net.parameters()
         """
         pass
 
@@ -52,11 +50,12 @@ class Perturbator():
         dict["p"] = self.p
         return dict
 
+
 class BitwisePert(Perturbator):
     def __init__(self, p: float = 1.):
         assert (p >= 0. and p <= 1.), "probability p must be between 0 and 1"
         self.p = p
-    
+
     def __str__(self):
         return "Bitwise Perturbation"
 
@@ -84,7 +83,6 @@ class BitwisePert(Perturbator):
                     param *= param_mean
                 else:
                     warnings.warn(f'Scaling is not one of {BINARY_SCALING}', UserWarning)
-
         param = param.view(param_shape)
 
     def generate_mask(self, width: int):
@@ -102,6 +100,7 @@ class BitwisePert(Perturbator):
         mask = np.random.binomial(1, self.p, (width, tensor_length))
         self.effective_p = np.count_nonzero(mask)/tensor_length
         return np.packbits(mask, axis=0, bitorder='little')[0]
+
 
 class Zeros(Perturbator):
     """
@@ -127,6 +126,7 @@ class Zeros(Perturbator):
                 param.data[i] = 0
         param = param.view(param_shape)
 
+
 class SignInvert(Perturbator):
     """
     Perturbation that inverts the sign of the input
@@ -149,8 +149,8 @@ class SignInvert(Perturbator):
         for i, _ in enumerate(data):
             data[i] = repr.convert_to_repr(data[i])
         data = data.astype('int')
-        #mask = torch.ones_like(param)
-        #for i, _ in enumerate(mask):
+        # mask = torch.ones_like(param)
+        # for i, _ in enumerate(mask):
         #    if random.random() <= self.p:
         #        mask[i] = 0
         mask = mask*2 - 1
@@ -158,6 +158,7 @@ class SignInvert(Perturbator):
         for i, value in enumerate(data):
             param.data[i] = value
         param = param.view(param_shape)
+
 
 class Ones(Perturbator):
     """
@@ -177,6 +178,7 @@ class Ones(Perturbator):
             if (random.random() <= self.p):
                 param.data[i] = 1
         param = param.view(param_shape)
+
 
 class Gauss(Perturbator):
     """
@@ -199,6 +201,7 @@ class Gauss(Perturbator):
                 param.data[i] += random.gauss(self.mu, self.sigma) * param.data[i]
         param = param.view(param_shape)
 
+
 """
 This dictionnary is used to construct perturbations from a JSON input
 """
@@ -210,10 +213,12 @@ PerturbatorDict = {
     "Gauss": Gauss
 }
 
+
 def construct_pert(pert_dict):
     """
     Constructs a perturbation according to the dictionnary provided.
-    The dictionnary should have a field for 'name' equals to the name of the class and a probability p.
+    The dictionnary should have a field for 'name' equals to the name of the
+    class and a probability p.
     """
     if pert_dict is None:
         return None

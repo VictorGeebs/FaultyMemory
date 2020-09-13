@@ -1,6 +1,3 @@
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
 import copy
 import math
 import numpy as np
@@ -20,7 +17,8 @@ from typing import List, Union, Optional
 
 class Handler():
     """
-    Class in charge of saving tensors, storing information about them, activation perturbations and clusters.
+    Class in charge of saving tensors, storing information about them,
+    activation perturbations and clusters.
     """
 
     def __init__(self, net, clusters=None):
@@ -44,7 +42,8 @@ class Handler():
 
     def forward(self, x):
         r"""
-        Saves every tensor, then perturbs every tensor, and then makes the forward pass
+        Saves every tensor, then perturbs every tensor, and then makes the
+        forward pass
         """
         self.save_net()
         self.perturb_tensors()
@@ -104,11 +103,11 @@ class Handler():
             full_key = name + '.' + param_key
             self.remove_tensor(full_key)
 
-    def add_network(self, perturb=[None], representation=None):
+    def add_all_tensors(self, perturb=[None], representation=None):
         for param_key in dict(self.net.named_parameters()):
             self.add_tensor(param_key, perturb, representation)
 
-    def clear_network(self):
+    def remove_all_tensors(self):
         for param_key in dict(self.net.named_parameters()):
             self.remove_tensor(param_key)
 
@@ -135,52 +134,6 @@ class Handler():
         for module in dict(self.net.named_modules()):
             self.remove_activation(module)
 
-    def init_clusters(self, clusters=None, modules=None):  # TODO: DEPRECATED
-        """
-        This function is deprecated and should not be called
-        Assigns modules to specified clusters.\n
-        Clusters should contain the list of clusters you wish to assign modules to.\n
-        Modules should be a list of lists of modules, the first list being the modules to assign to clusters[0] and so on.\n
-        The list of modules in modules[i] will be assigned to clusters[i].\n
-        If no modules or clusters are specified, it will split all modules in order and distribute them across all clusters in the handler equally.
-        """
-        if modules is None:
-            if clusters is None:
-                clusters = self.clusters
-            modules = list(self.net.children())
-            nb_clust = len(clusters)
-            nb_modules = len(modules)
-            n = math.ceil(nb_modules/nb_clust)
-            # Splitting the modules in equal groups according to nb of clusters and nb of modules
-            groups = [modules[i:i + n] for i in range(0, len(modules), n)]
-            modules = groups
-
-        for i, cluster in enumerate(clusters):
-            for module in modules[i]:  # Watch out for out of bounds error
-                cluster.add_module(module)
-
-    def move_tensor(self, destination_cluster, tensor):  # DEPRECATED
-        """
-        Moves a tensor from its cluster to the destination cluster
-        """
-        for cluster in self.clusters:
-            if cluster.contains(tensor):
-                cluster.remove_tensor(tensor)
-        destination_cluster.add_tensor(tensor)
-
-    def move_module(self, destination_cluster, module):  # DEPRECATED
-        """
-        Moves a module from its cluster to the destination cluster
-        """
-        for cluster in self.clusters:
-            cluster.remove_module(module)
-        destination_cluster.add_module(module)
-
-    def move_activation(self, destination_cluster, module):  # DEPRECATED
-        for cluster in self.clusters:
-            cluster.remove_activation(module)
-        destination_cluster.add_activation(module)
-
     def save_net(self):
         """
         Creates a backup of the network in saved_net
@@ -189,8 +142,9 @@ class Handler():
 
     def perturb_tensors(self, scaling: str = 'none'):
         """
-        Applies every perturbation specified in their tensor_info to each tensor.\n
-        Tensors are modified in-place, without modifying their reference.      
+        Applies every perturbation specified in their tensor_info to each
+        tensor.\n
+        Tensors are modified in-place, without modifying their reference.     
         """
         if self.clustering is True:
             for cluster in self.clusters:
@@ -200,6 +154,10 @@ class Handler():
                 tens = item[0]
                 pert = item[1]
                 repr = item[2]
+                print("before: ", tens)
+                if repr is not None:
+                    repr.convert_tensor(tens)
+                print("after: ", tens)
                 if pert is not None:
                     for perturb in pert:
                         if perturb is not None:
@@ -216,7 +174,8 @@ class Handler():
 
     def from_dict(self, handler_dict):
         """
-        Loads a configuration from a dictionnary specifying the perturbations and representation of the entire network, modules or tensors\n
+        Loads a configuration from a dictionnary specifying the perturbations
+        and representation of the entire network, modules or tensors\n
         Keys for modules have to be contained in net.named_modules() to be found\n
         Keys for tensors have to be contained in net.named_parameters() to be found\n
         An example of a dictionnary can be found in the file ./profiles/default.json
@@ -261,8 +220,8 @@ class Handler():
                             pert = P.construct_pert(pert_dict)
                             perturbs.append(pert)
                     else:
-                        perturbs = None
-
+                        perturbs=None
+                    
                     current_mod = dict(self.net.named_modules())[module_name]
                     for param_key in dict(current_mod.named_parameters()):
                         full_key = module_name + '.' + param_key
@@ -285,7 +244,7 @@ class Handler():
                             pert = P.construct_pert(pert_dict)
                             perturbs.append(pert)
                     else:
-                        perturbs = None
+                        perturbs=None
 
                     tens = dict(self.net.named_parameters())[tensor_name]
                     self.tensor_info[tensor_name] = (tens, perturbs, repr)
@@ -368,7 +327,8 @@ class Handler():
 
     def tensor_to_json(self, tensor_name):
         """
-        Creates a dict representing the tensor information to be later converted into json format
+        Creates a dict representing the tensor information to be later
+        converted into json format
         """
         name = tensor_name
         tup = self.tensor_info[name]
@@ -389,7 +349,8 @@ class Handler():
 
     def acti_to_json(self, tensor_name):
         """
-        Creates a dict representing the activation information to be later converted into json format
+        Creates a dict representing the activation information to be later
+        converted into json format
         """
         name = tensor_name
         tup = self.acti_info[name]
@@ -410,16 +371,14 @@ class Handler():
 
     def assign_clusters(self):
         """
-        Applies k-means clustering to the perturbation rates of all perturbations 
-        to group them in the handler's clusters.
+        Applies k-means clustering to the perturbation rates of all
+        perturbations to group them in the handler's clusters.
         Currently only supports Bitwise Perturbations
         """
         running_perts = {}
         for name in self.tensor_info:
             item = self.tensor_info[name]
-            tens = item[0]
             pert_list = item[1]
-            repr = item[2]
             pert_names = []
             prob_list = []
             if pert_list is not None:
@@ -431,9 +390,10 @@ class Handler():
                 running_perts[pert_names] = [(name, prob_list)]
             else:
                 running_perts[pert_names].append((name, prob_list))
+
         running_perts.pop('')
-        assert len(running_perts) <= len(
-            self.clusters), "More different perturbations than clusters available, cannot assign tensors to clusters"
+
+        assert len(running_perts) <= len(self.clusters), "More different perturbations than clusters available, cannot assign tensors to clusters"
 
         # ONLY BITWISEPERT FOR THE TIME BEING
         bitwises = running_perts['BitwisePert']
@@ -456,8 +416,8 @@ class Handler():
 
     def toggle_clustering(self):
         """
-        Turns on or off clustering, which groups tensor perturbations with 
-        nearby perturbation rates. 
+        Turns on or off clustering, which groups tensor perturbations with
+        nearby perturbation rates.
         """
         self.clustering = not self.clustering
         return self.clustering

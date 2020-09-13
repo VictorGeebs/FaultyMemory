@@ -1,9 +1,9 @@
 lib/tempCodeRunnerFile.py
 models/mcdonnell.pth
 profiles/extra.txt
-
 .vscode/*
 .pytest_cache/*
 data/*
 */__pycache__/*
 *.pth
+*.egg*

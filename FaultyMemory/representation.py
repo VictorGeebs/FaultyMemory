@@ -5,7 +5,8 @@ import numpy as np
 class Representation:
     """
     Base class for custom representations
-    This base class is used to represent ints and uints of arbitrary width, though capped at width 8 at the moment for memory reasons
+    This base class is used to represent ints and uints of arbitrary width,
+    though capped at width 8 at the moment for memory reasons
     """
 
     def __init__(self, width=8, unsigned=True):
@@ -19,9 +20,18 @@ class Representation:
     def __repr__(self):
         return self.__str__()
 
+    def convert_tensor(self, tensor):
+        param_shape = tensor.shape
+        param = tensor.flatten()
+        data = param.detach().numpy()
+        for i, value in enumerate(data):
+            param.data[i] = self.convert_to_repr(value)
+        tensor = param.view(param_shape)
+
     def convert_to_repr(self, value):
         """
-        Converts a value to the representation and returns it as its numpy version
+        Converts a value to the representation and returns it as its numpy
+        version
         """
         if self.unsigned:
             value = value % (pow(2, self.width))
@@ -40,14 +50,16 @@ class Representation:
 
     def apply_tensor_mask(self, tensor, mask):
         """
-        A parallelised version of apply_mask, which returns the bitwise XOR of an entire tensor with a tensor mask
+        A parallelised version of apply_mask, which returns the bitwise XOR of
+        an entire tensor with a tensor mask
         """
         param = np.bitwise_xor(tensor, mask)
         return param
 
     def to_json(self):
         """
-        Creates and returns a dictionnary with the necessary information to re-construct this instance
+        Creates and returns a dictionnary with the necessary information to
+        re-construct this instance
         """
         dict = {}
         dict["name"] = self.__class__.__name__
@@ -112,6 +124,10 @@ The dictionnary should have a field for 'name' equals to the name of the class, 
 
 
 def construct_repr(repr_dict):
+    """
+    Constructs a representation according to the dictionnary provided.
+    The dictionnary should have a field for 'name' equals to the name of the class, the width and wether or not it is unsigned.
+    """
     if repr_dict is None:
         return None
     instance = RepresentationDict[repr_dict["name"]](

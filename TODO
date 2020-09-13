@@ -9,6 +9,7 @@
 - [X] JSON saver
 - [X] Prune useless function
 - [X] Extend documentation
+- [ ] Make representation tensor wide
 - [ ] Make automated tests for the API itself
 - [ ] Change clusters to deal with correlations
 - [ ] Fixed-point representation
