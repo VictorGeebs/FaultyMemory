@@ -1,13 +1,18 @@
 import copy
 import math
 import numpy as np
-import FaultyMemory.perturbator as P
-import FaultyMemory.representation as R
-from FaultyMemory.hook import *
-import FaultyMemory.cluster as C
 import time
 import json
 from scipy.cluster.vq import kmeans, vq
+from tqdm import tqdm
+
+import FaultyMemory.perturbator as P
+import FaultyMemory.representation as R
+import FaultyMemory.cluster as C
+from FaultyMemory.hook import *
+from FaultyMemory.utils import listify
+
+from typing import List, Union, Optional
 
 
 class Handler():
@@ -61,7 +66,11 @@ class Handler():
             perturbed = perturbed.view(perturbed_shape)
             saved = saved.view(saved_shape)
 
-    def add_tensor(self, name, perturb=None, representation=None, reference=None):
+    def add_tensor(self, 
+                   name: str, 
+                   perturb: Union[List, Perturbator] = None,
+                   representation: Representation = None,
+                   reference: Optional[str] = None):
         if reference is None:
             net_dict = dict(self.net.named_parameters())
             try:
@@ -70,6 +79,7 @@ class Handler():
             except AssertionError as id:
                 print(id)
                 return
+        perturb = listify(perturb)  # ensure perturb is a list
         self.tensor_info[name] = (reference, perturb, representation)
 
     def remove_tensor(self, name):
@@ -130,7 +140,7 @@ class Handler():
         """
         self.saved_net = copy.deepcopy(self.net)
 
-    def perturb_tensors(self, scaling=False):
+    def perturb_tensors(self, scaling: str = 'none'):
         """
         Applies every perturbation specified in their tensor_info to each
         tensor.\n
@@ -140,7 +150,7 @@ class Handler():
             for cluster in self.clusters:
                 cluster.perturb_tensors()
         else:
-            for name, item in self.tensor_info.items():
+            for name, item in tqdm(self.tensor_info.items(), 'Perturbing tensors'):
                 tens = item[0]
                 pert = item[1]
                 repr = item[2]
@@ -411,3 +421,14 @@ class Handler():
         """
         self.clustering = not self.clustering
         return self.clustering
+
+    def list_fault_masks(self):
+        masks = {}
+        for name, item in tqdm(self.tensor_info.items(), 'Perturbing tensors'):
+            tens = item[0]
+            pert = item[1]
+            repr = item[2]
+            if pert is not None:
+                for perturb in pert:
+                    if perturb is not None:
+                        masks[name] = perturb.mask

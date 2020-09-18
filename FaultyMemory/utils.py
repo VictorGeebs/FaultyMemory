@@ -4,9 +4,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 import random
 import copy
-import perturbator as P
-import cluster as C
-import handler as H
+import numpy as np
+import FaultyMemory.perturbator as P
+import FaultyMemory.cluster as C
+import FaultyMemory.handler as H
+import time
+from tqdm import tqdm
 
 
 class R2Dataset(Dataset):
@@ -15,6 +18,7 @@ class R2Dataset(Dataset):
     This dataset contains values of R^2 with labels as the XOR of the sign of
     those two values.
     """
+
     def __init__(self, dim=1, len=1):
         self.dim = dim
         self.len = len
@@ -36,8 +40,8 @@ class R2Dataset(Dataset):
     def label_sample(self, sample):
         poscount = 0
         for value in sample:
-            poscount += (value >= 0)
-        return (poscount % 2)
+            poscount += value >= 0
+        return poscount % 2
 
     def __len__(self):
         return len(self.samples)
@@ -46,7 +50,7 @@ class R2Dataset(Dataset):
         return self.samples[idx]
 
 
-def test_accuracy(net, testloader):
+def test_accuracy(net, testloader) -> float:
     """
     A basic test function to test the accuracy of a network. \n
     This function might need modification depending on the type of label you
@@ -55,15 +59,17 @@ def test_accuracy(net, testloader):
     correct = 0
     total = 0
     with torch.no_grad():
-        for data in testloader:
+        for data in tqdm(testloader, "Test set iters"):
             samples, labels = data
+            samples, labels = samples.to(net.device), labels.to(net.device)
             outputs = net(samples)
+            # net.restore()
             _, predicted = torch.max(outputs, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
-            print("running acc: ", correct/total)
+            # print("running acc: ", correct/total)
             # break
-    accuracy = correct/total
+    accuracy = correct / total
     return accuracy
 
 
@@ -84,11 +90,10 @@ def train_net(net, optimizer, criterion, trainloader, nb_epochs, prt=True):
             optimizer.step()
 
             running_loss += loss.item()
-        if prt is True:
-            print('[%d, %5d] loss: %.3f' %
-                  (epoch + 1, i + 1, running_loss / (i + 1)))
-    if prt is True:
-        print('Finished Training')
+        if prt == True:
+            print("[%d, %5d] loss: %.3f" % (epoch + 1, i + 1, running_loss / (i + 1)))
+    if prt == True:
+        print("Finished Training")
 
 
 def generate_graphs(net, testloader, probs):  # DEPRECATED
@@ -146,6 +151,7 @@ class Xor(nn.Module):
     """
     A simple network to solve R^2 XOR datasets
     """
+
     def __init__(self):
         super(Xor, self).__init__()
         self.fc1 = nn.Linear(2, 4)
@@ -158,24 +164,8 @@ class Xor(nn.Module):
         return x
 
 
-def hook_all_fwd(model, hook_fn):
-    """
-    Simple function to apply a forward hook to all modules in a model
-    """
-    hooks = {}
-    for name, module in model.named_modules():
-        hooks[name] = module.register_forward_hook(hook_fn)
-
-
-def hook_print_fwd(model, inp, out):
-    """
-    Simple hook function to print the inputs and outputs of a model
-    """
-    print('')
-    print('')
-    print(model)
-    print("------------Fwd------------")
-    print("Input Activations")
-    print(inp)
-    print("Calculated Output")
-    print(out)
+def listify(obj: object):
+    if isinstance(obj, list):
+        return obj
+    else:
+        return [obj]
