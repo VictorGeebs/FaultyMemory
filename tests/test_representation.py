@@ -9,7 +9,7 @@ from FaultyMemory.handler import Handler
 from FaultyMemory.perturbator import BitwisePert
 
 
-def test_binary_faults():
+def test_binary_faults():   #TODO DRY 
     class dummy_module(nn.Module):
         def __init__(self):
             super().__init__()
@@ -21,17 +21,19 @@ def test_binary_faults():
     dummy = dummy_module()
     bin_repr = BinaryRepresentation(width=1, unsigned=False)
     handler = Handler(dummy)
-    handler.add_tensor('dummy', representation=bin_repr)
+
+    pert = BitwisePert(p=0.)
+    handler.add_tensor('dummy', representation=bin_repr, perturb=[pert])
     handler.perturb_tensors()
 
     # no faults
     perturbed_ten = copy.deepcopy(dummy.dummy.detach().numpy())
-    assert (perturbed_ten).all() in [-1, 1]
+    assert np.isin(perturbed_ten, [1, -1]).all()
 
     handler.restore()
     handler.remove_tensor('dummy')
-    pert2 = BitwisePert()
-    handler.add_tensor('dummy', representation=bin_repr, perturb=[pert2])
+    pert = BitwisePert()
+    handler.add_tensor('dummy', representation=bin_repr, perturb=[pert])
     handler.perturb_tensors()
 
     # faults everywhere : should sum to 0 (-1+1 for each slot of the tensor)

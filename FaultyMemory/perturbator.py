@@ -1,8 +1,14 @@
 import random
 import numpy as np
 import math as math
-from FaultyMemory.representation import *
+import warnings
 from json import JSONEncoder
+
+from FaultyMemory.representation import *
+
+from typing import Optional
+
+BINARY_SCALING = ['none', 'he', 'mean']
 
 class Perturbator():
     """
@@ -23,7 +29,7 @@ class Perturbator():
         return self.__str__
 
     def perturb(self, params, repr=None, scaling=False):
-        """
+        r"""
         This function is the transformation that is applied to the data when
         the perturbator is called in  __call__(self, params).
         Should be overridden by all subclasses.
@@ -46,7 +52,7 @@ class Perturbator():
 
 
 class BitwisePert(Perturbator):
-    def __init__(self, p=1):
+    def __init__(self, p: float = 1.):
         assert (p >= 0. and p <= 1.), "probability p must be between 0 and 1"
         self.p = p
 
@@ -56,28 +62,43 @@ class BitwisePert(Perturbator):
     def __repr__(self):
         return self.__str__()
 
-    def perturb(self, param, repr=None, scaling=False):
-        param_shape = param.shape
+    def perturb(self, param: torch.tensor, repr: Optional[Perturbator] = None, scaling: Optional[str] = 'none'):
+        param_shape, param_mean = param.shape, torch.mean(torch.abs(param)).item()
         param = param.flatten()
-        mask = self.generate_tensor_mask_bit(repr.width, param.shape[0])
-        data = param.detach().numpy()
-        data = repr.apply_tensor_mask(data, mask)
+        self.mask = self.generate_tensor_mask_bit(repr.width, param.shape[0])
+        data = param.detach().cpu().numpy()
+        for i, _ in enumerate(data):
+            data[i] = repr.convert_to_repr(data[i])
+        data = data.astype('int')
+        data = repr.apply_tensor_mask(data, self.mask)
         for i, value in enumerate(data):
             param.data[i] = value
-        if scaling is True:
-            he_scaling = math.sqrt(2. / (param_shape[1]*param_shape[2]*param_shape[3]))
-            param *= he_scaling
+
+        if scaling != 'none':
+            with torch.no_grad():
+                if scaling == 'he':
+                    he_scaling = math.sqrt(2./(np.prod(param_shape)))
+                    param *= he_scaling
+                elif scaling == 'mean':
+                    param *= param_mean
+                else:
+                    warnings.warn(f'Scaling is not one of {BINARY_SCALING}', UserWarning)
         param = param.view(param_shape)
 
-    def generate_mask(self, width):
+    def generate_mask(self, width: int):
         mask = np.zeros(8, dtype=int)
         for i in range(1, width+1):
             if (random.random() <= self.p):
                 mask[-i] = 1
         return np.packbits(mask)[0]
 
-    def generate_tensor_mask_bit(self, width, tensor_length):
+    def generate_tensor_mask_bit(self, width: int, tensor_length: int):
+        r""" Generate a fault mask the same size as `tensor_length` with precision `width``
+
+        Also set the attribute `effective_p` for bookeeping
+        """
         mask = np.random.binomial(1, self.p, (width, tensor_length))
+        self.effective_p = np.count_nonzero(mask)/tensor_length
         return np.packbits(mask, axis=0, bitorder='little')[0]
 
 
