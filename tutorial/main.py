@@ -8,9 +8,9 @@ import wrn_mcdonnell_manual as McDo
 import Dropit
 from collections import OrderedDict
 
-from tests.test_representation import test_binary_faults
+from tests.test_representation import test_binary_representation
 
-test_binary_faults()
+test_binary_representation()
 
 exit()
 
@@ -63,7 +63,6 @@ handler.from_json('./profiles/McDo.json')
 handler.assign_clusters()
 # handler.to_json('./profiles/saved_handler.json')
 exit()
-print(handler)
 
 inp = torch.tensor([1.])
 out = handler(inp)

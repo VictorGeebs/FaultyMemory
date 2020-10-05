@@ -55,6 +55,11 @@ handler.from_json('./profiles/McDo.json')
 # print("Acc: ", results)
 # print("Time: ", tot_time)
 
+print("perturbing net")
+handler.perturb_tensors(True)
+utils.test_accuracy(net, testloader)
+exit()
+
 acc_dict = {}
 for scaling in [True, False]:
     nb_nets = 5
@@ -64,7 +69,9 @@ for scaling in [True, False]:
         handler.perturb_tensors(scaling)
         avg_list.append(utils.test_accuracy(net, testloader))
         handler.restore()
+        break
     acc_dict[scaling] = avg_list
+    break
 
 print("Accuracies", acc_dict)
 

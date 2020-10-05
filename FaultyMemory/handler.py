@@ -144,10 +144,8 @@ class Handler():
                 tens = item[0]
                 pert = item[1]
                 repr = item[2]
-                print("before: ", tens)
                 if repr is not None:
                     repr.convert_tensor(tens)
-                print("after: ", tens)
                 if pert is not None:
                     for perturb in pert:
                         if perturb is not None:

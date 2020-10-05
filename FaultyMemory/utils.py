@@ -4,9 +4,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import random
 import copy
-import perturbator as P
-import cluster as C
-import handler as H
+import FaultyMemory.perturbator as P
+import FaultyMemory.cluster as C
+import FaultyMemory.handler as H
 
 
 class R2Dataset(Dataset):
