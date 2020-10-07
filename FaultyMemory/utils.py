@@ -4,18 +4,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 import random
 import copy
-<<<<<<< HEAD
-import FaultyMemory.perturbator as P
-import FaultyMemory.cluster as C
-import FaultyMemory.handler as H
-=======
 import numpy as np
 import FaultyMemory.perturbator as P
 import FaultyMemory.cluster as C
 import FaultyMemory.handler as H
 import time
 from tqdm import tqdm
->>>>>>> 152e0b222c07c32029dbd66872a7ee15c5978af2
 
 
 class R2Dataset(Dataset):
