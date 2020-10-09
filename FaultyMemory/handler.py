@@ -16,7 +16,7 @@ from typing import List, Union, Optional
 
 
 class Handler():
-    """
+    r"""
     Class in charge of saving tensors, storing information about them,
     activation perturbations and clusters.
     """
@@ -44,6 +44,9 @@ class Handler():
         r"""
         Saves every tensor, then perturbs every tensor, and then makes the
         forward pass
+
+        Args:
+            x: Input to process
         """
         self.save_net()
         self.perturb_tensors()
