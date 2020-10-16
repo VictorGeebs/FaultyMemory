@@ -8,9 +8,14 @@ import wrn_mcdonnell_manual as McDo
 import Dropit
 from collections import OrderedDict
 
-from tests.test_representation import test_binary_representation
+from tests.test_representation import test_binary_faults
 
-test_binary_representation()
+from torch.utils.cpp_extension import load
+
+Cpp_Pert = load(name="Cpp_Pert", sources=["FaultyMemory/cpp/perturbation.cpp"])
+
+
+test_binary_faults()
 
 exit()
 

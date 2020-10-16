@@ -3,12 +3,19 @@ import numpy as np
 import math as math
 import warnings
 from json import JSONEncoder
+import torch
 
 from FaultyMemory.representation import *
 
 from typing import Optional
 
+# TODO: remove and cleanup 
+from torch.utils.cpp_extension import load
+Cpp_Pert = load(name="Cpp_Pert", sources=["FaultyMemory/cpp/perturbation.cpp"])
+
+
 BINARY_SCALING = ['none', 'he', 'mean']
+
 
 class Perturbator():
     """
@@ -65,14 +72,17 @@ class BitwisePert(Perturbator):
     def perturb(self, param: torch.tensor, repr: Optional[Perturbator] = None, scaling: Optional[str] = 'none'):
         param_shape, param_mean = param.shape, torch.mean(torch.abs(param)).item()
         param = param.flatten()
-        self.mask = self.generate_tensor_mask_bit(repr.width, param.shape[0])
-        data = param.detach().cpu().numpy()
-        for i, _ in enumerate(data):
-            data[i] = repr.convert_to_repr(data[i])
-        data = data.astype('int')
-        data = repr.apply_tensor_mask(data, self.mask)
-        for i, value in enumerate(data):
-            param.data[i] = value
+        Cpp_Pert.perturb(param, self.p)
+        
+        # TODO remove commented block
+        #self.mask = self.generate_tensor_mask_bit(repr.width, param.shape[0])
+        #data = param.detach().cpu().numpy()
+        #for i, _ in enumerate(data):
+        #    data[i] = repr.convert_to_repr(data[i])
+        #data = data.astype('int')
+        #data = repr.apply_tensor_mask(data, self.mask)
+        #for i, value in enumerate(data):
+        #    param.data[i] = value
 
         if scaling != 'none':
             with torch.no_grad():

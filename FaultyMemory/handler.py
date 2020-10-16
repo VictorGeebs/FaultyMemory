@@ -147,7 +147,7 @@ class Handler():
         """
         Applies every perturbation specified in their tensor_info to each
         tensor.\n
-        Tensors are modified in-place, without modifying their reference.     
+        Tensors are modified in-place, without modifying their reference.
         """
         if self.clustering is True:
             for cluster in self.clusters:

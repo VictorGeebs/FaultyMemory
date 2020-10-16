@@ -35,9 +35,11 @@ def test_binary_faults():   #TODO DRY
     pert = BitwisePert()
     handler.add_tensor('dummy', representation=bin_repr, perturb=[pert])
     handler.perturb_tensors()
-
+    
+    print(perturbed_ten)
     # faults everywhere : should sum to 0 (-1+1 for each slot of the tensor)
     perturbed_ten_inv = copy.deepcopy(dummy.dummy.detach().numpy())
+    print(perturbed_ten_inv)
     assert sum(perturbed_ten + perturbed_ten_inv) == 0
 
 
