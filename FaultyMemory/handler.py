@@ -51,6 +51,7 @@ class Handler():
         self.save_net()
         self.perturb_tensors()
         out = self.net.forward(x)
+        self.restore()
         return out
 
     def restore(self):
@@ -433,3 +434,9 @@ class Handler():
                 for perturb in pert:
                     if perturb is not None:
                         masks[name] = perturb.mask
+                        
+    def train(self) -> None:
+        self.net.train()
+        
+    def eval(self) -> None:
+        self.net.eval()
