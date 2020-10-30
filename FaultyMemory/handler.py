@@ -1,7 +1,4 @@
 import copy
-import math
-import numpy as np
-import time
 import json
 from scipy.cluster.vq import kmeans, vq
 from tqdm import tqdm
@@ -9,10 +6,11 @@ from tqdm import tqdm
 import FaultyMemory.perturbator as P
 import FaultyMemory.representation as R
 import FaultyMemory.cluster as C
+from FaultyMemory.represented_tensor import RepresentedWeight, RepresentedActivation
 from FaultyMemory.hook import *
-from FaultyMemory.utils import listify
+from FaultyMemory.utils import listify, ten_exists
 
-from typing import List, Union, Optional
+from typing import List, Tuple, Union, Optional
 
 
 class Handler():
@@ -61,14 +59,14 @@ class Handler():
         pert_params = list(self.net.parameters())
         saved_params = list(self.saved_net.parameters())
         for perturbed, saved in zip(pert_params, saved_params):
-            perturbed_shape = perturbed.shape
-            saved_shape = saved.shape
-            perturbed = perturbed.flatten()
-            saved = saved.flatten()
-            for i, _ in enumerate(perturbed.data):
-                perturbed.data[i] = saved.data[i]
-            perturbed = perturbed.view(perturbed_shape)
-            saved = saved.view(saved_shape)
+            # perturbed_shape = perturbed.shape
+            assert perturbed.shape == saved.shape, 'Size mismatch, there is an error somewhere'
+            # perturbed = perturbed.flatten()
+            # saved = saved.flatten()
+            # perturbed.data = saved.data
+            # perturbed = perturbed.view(perturbed_shape)
+            # saved = saved.view(perturbed_shape)
+            perturbed.data.copy_(saved.data) 
 
     def add_tensor(self, 
                    name: str, 
@@ -76,66 +74,54 @@ class Handler():
                    representation: Representation = None,
                    reference: Optional[str] = None):
         if reference is None:
-            net_dict = dict(self.net.named_parameters())
-            try:
-                assert name in net_dict, "Specified name not in net.named_parameters and no reference given, cannot add this tensor"
-                reference = dict(self.net.named_parameters())[name]
-            except AssertionError as id:
-                print(id)
-                return
+            ten_exists(self.net.named_parameters(), name)
+            reference = self.net.named_parameters()[name]
         perturb = listify(perturb)  # ensure perturb is a list
-        self.tensor_info[name] = (reference, perturb, representation)
+        self.tensor_info[name] = RepresentedWeight(reference, perturb, representation)
 
     def remove_tensor(self, name):
         self.tensor_info.pop(name, None)
 
     def add_module(self, name, perturb=None, representation=None):
-        net_dict = dict(self.net.named_modules())
-        try:
-            assert name in net_dict, "Specified name not in net.named_modules, cannot add this module"
-        except AssertionError as id:
-            print(id)
-            return
-        module = dict(self.net.named_modules())[name]
-        for param_key in dict(module.named_parameters()):
+        net_dict = self.net.named_modules()
+        ten_exists(net_dict, name)
+        module = self.net.named_modules()[name]
+        for param_key, _ in module.named_parameters():
             full_key = name + '.' + param_key
             self.add_tensor(full_key, perturb, representation)
 
     def remove_module(self, name):
-        module = dict(self.net.named_modules())[name]
-        for param_key in dict(module.named_parameters()):
+        module = self.net.named_modules()[name]
+        for param_key, _ in module.named_parameters():
             full_key = name + '.' + param_key
             self.remove_tensor(full_key)
 
     def add_all_tensors(self, perturb=[None], representation=None):
-        for param_key in dict(self.net.named_parameters()):
+        for param_key, _ in self.net.named_parameters():
             self.add_tensor(param_key, perturb, representation)
 
     def remove_all_tensors(self):
-        for param_key in dict(self.net.named_parameters()):
+        for param_key, _ in self.net.named_parameters():
             self.remove_tensor(param_key)
 
     def add_activation(self, name, perturb=None, representation=None):
-        net_dict = dict(self.net.named_modules())
-        try:
-            assert name in net_dict, "Specified name not in net.named_modules, cannot add this module"
-        except AssertionError as id:
-            print(id)
-            return
+        net_dict = self.net.named_modules()
+        ten_exists(net_dict, name)
         module = net_dict[name]
         hook = Hook(perturb, representation)
         self.hooks[name] = module.register_forward_hook(hook.hook_fn)
         self.acti_info[name] = (perturb, representation)
 
     def remove_activation(self, name):
+        self.hooks[name].remove()
         self.acti_info.pop(name, None)
 
     def add_network_activations(self, perturb=None, representation=None):
-        for module in dict(self.net.named_modules()):
+        for module, _ in self.net.named_modules():
             self.add_activation(module)
 
     def clear_network_activations(self):
-        for module in dict(self.net.named_modules()):
+        for module, _ in self.net.named_modules():
             self.remove_activation(module)
 
     def save_net(self):
@@ -154,10 +140,7 @@ class Handler():
             for cluster in self.clusters:
                 cluster.perturb_tensors()
         else:
-            for name, item in tqdm(self.tensor_info.items(), 'Perturbing tensors'):
-                tens = item[0]
-                pert = item[1]
-                repr = item[2]
+            for _, (tens, pert, repr) in tqdm(self.tensor_info.items(), 'Perturbing tensors'):
                 if repr is not None:
                     repr.convert_tensor(tens)
                 if pert is not None:
@@ -202,9 +185,8 @@ class Handler():
                         pert = P.construct_pert(pert_dict)
                         perturbs.append(pert)
 
-                for param in list(self.net.named_parameters()):
-                    tensor_name = param[0]
-                    self.tensor_info[tensor_name] = (param[1], perturbs, repr)
+                for (tensor_name, ref) in list(self.net.named_parameters()):
+                    self.tensor_info[tensor_name] = (ref, perturbs, repr)
 
             # Modules batch
             modules = weight_dict['modules']
@@ -224,10 +206,10 @@ class Handler():
                     else:
                         perturbs=None
                     
-                    current_mod = dict(self.net.named_modules())[module_name]
-                    for param_key in dict(current_mod.named_parameters()):
+                    current_mod = self.net.named_modules()[module_name]
+                    for param_key, _ in current_mod.named_parameters():
                         full_key = module_name + '.' + param_key
-                        tens = dict(current_mod.named_parameters())[param_key]
+                        tens = current_mod.named_parameters()[param_key]
                         self.tensor_info[full_key] = (tens, perturbs, repr)
 
             # Tensors
@@ -248,7 +230,7 @@ class Handler():
                     else:
                         perturbs=None
 
-                    tens = dict(self.net.named_parameters())[tensor_name]
+                    tens = self.net.named_parameters()[tensor_name]
                     self.tensor_info[tensor_name] = (tens, perturbs, repr)
 
         # Activations
@@ -287,7 +269,7 @@ class Handler():
                         pert = P.construct_pert(pert_dict)
                         perturbs.append(pert)
 
-                    current_mod = dict(self.net.named_modules())[module_name]
+                    current_mod = self.net.named_modules()[module_name]
                     hook = Hook(perturbs, repr)
                     self.hooks[module_name] = current_mod.register_forward_hook(
                         hook.hook_fn)
@@ -333,9 +315,7 @@ class Handler():
         converted into json format
         """
         name = tensor_name
-        tup = self.tensor_info[name]
-        pert_list = tup[1]
-        repr = tup[2]
+        (_, pert_list,repr) = self.tensor_info[name]
 
         repr_data = repr.to_json() if repr is not None else None
         pert_data = [o.to_json()
@@ -355,9 +335,7 @@ class Handler():
         converted into json format
         """
         name = tensor_name
-        tup = self.acti_info[name]
-        pert_list = tup[0]
-        repr = tup[1]
+        pert_list, repr = self.acti_info[name]
 
         repr_data = repr.to_json() if repr is not None else None
         pert_data = [o.to_json()
@@ -423,20 +401,18 @@ class Handler():
         """
         self.clustering = not self.clustering
         return self.clustering
-
-    def list_fault_masks(self):
-        masks = {}
-        for name, item in tqdm(self.tensor_info.items(), 'Perturbing tensors'):
-            tens = item[0]
-            pert = item[1]
-            repr = item[2]
-            if pert is not None:
-                for perturb in pert:
-                    if perturb is not None:
-                        masks[name] = perturb.mask
                         
     def train(self) -> None:
         self.net.train()
         
     def eval(self) -> None:
         self.net.eval()
+
+    def get_all(self) -> dict: #TODO en quête d'un meilleur nom
+        return dict(self.tensor_info, **self.acti_info) 
+
+    def energy_consumption(self) -> Tuple(int, float):
+        r""" Return (max_consumption, current_consumption)
+        """
+        energy = [t.energy_consumption() for t in self.get_all()]
+        return sum([t[0] for t in energy]), sum([t[1] for t in energy])
