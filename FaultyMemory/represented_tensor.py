@@ -20,7 +20,7 @@ class RepresentedTensor(ABC):
 
     def to_repr(self, x) -> None:
         encoded = self.repr.encode(x)
-        perturbed = self.pert(encoded)
+        perturbed = self.apply_perturb_to_encoded(encoded)
         return self.repr.decode(perturbed).to(x.dtype)
 
     def apply_perturb_to_encoded(self, base) -> nn.Tensor:

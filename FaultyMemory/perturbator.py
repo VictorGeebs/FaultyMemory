@@ -2,8 +2,8 @@ import random
 import numpy as np
 import math as math
 import warnings
-from json import JSONEncoder
 import torch
+from abc import ABC, abstractclassmethod
 
 from FaultyMemory.representation import *
 
@@ -13,18 +13,21 @@ from typing import Optional
 from torch.utils.cpp_extension import load
 Cpp_Pert = load(name="Cpp_Pert", sources=["FaultyMemory/cpp/perturbation.cpp"])
 
-
-BINARY_SCALING = ['none', 'he', 'mean']
-
-
-class Perturbator():
-    """
+class Perturbator(ABC):
+    r"""
     Base class for all perturbators that modelize calculation, memory or
     circuit failure.
     """
-    def __init__(self, p=1.):
-        assert (p >= 0. and p <= 1.), "probability p must be between 0 and 1"
-        self.p = p
+    repr_compatibility = []
+    def __init__(self, probs=None, logits=None):
+        if (probs is None) == (logits is None):
+            raise ValueError("Either `probs` or `logits` must be specified, but not both.")
+        if probs is not None:
+            assert (probs >= 0. and probs <= 1.), "probability p must be between 0 and 1"
+            self.probs = probs
+        else:
+            self.logits = logits
+        self._param = self.probs if probs is not None else self.logits
 
     def __call__(self, params, repr=None, scaling=False):  # Make flexible for calling with hooks or with only a tensor? __call__(self, params=None, module=None, in=None, out=None) Naming gets out of wack
         self.perturb(params, repr, scaling)
@@ -35,7 +38,8 @@ class Perturbator():
     def __repr__(self):
         return self.__str__
 
-    def perturb(self, params, repr=None, scaling=False):
+    @abstractclassmethod
+    def perturb(self, params, repr_width=None):
         r"""
         This function is the transformation that is applied to the data when
         the perturbator is called in  __call__(self, params).
@@ -45,16 +49,16 @@ class Perturbator():
         """
         pass
 
-    def set_probability(self, p=1):
+    def set_param(self, p=1):
         self.p = p
 
     def hook(self, module, inp, out):
         return self.perturb(out)
 
     def to_json(self):
-        dict = {}
-        dict["name"] = self.__class__.__name__
-        dict["p"] = self.p
+        dict = {'name': type(self).__name__,
+                'type': 'probs' if 'probs' in self.__dict__ else 'logits',
+                'param': self._param}
         return dict
 
 
