@@ -69,20 +69,23 @@ class BitwisePert(Perturbator):
     def __repr__(self):
         return self.__str__()
 
-    def perturb(self, param: torch.tensor, repr: Optional[Perturbator] = None, scaling: Optional[str] = 'none'):
+    def cpp_perturb(self, param: torch.tensor, repr: Optional[Perturbator] = None, scaling: Optional[str] = 'none'):
         param_shape, param_mean = param.shape, torch.mean(torch.abs(param)).item()
         param = param.flatten()
         Cpp_Pert.perturb(param, self.p)
+
+    def perturb(self, param: torch.tensor, repr: Optional[Perturbator] = None, scaling: Optional[str] = 'none'):
+        param_shape, param_mean = param.shape, torch.mean(torch.abs(param)).item()
+        param = param.flatten()
         
-        # TODO remove commented block
-        #self.mask = self.generate_tensor_mask_bit(repr.width, param.shape[0])
-        #data = param.detach().cpu().numpy()
-        #for i, _ in enumerate(data):
-        #    data[i] = repr.convert_to_repr(data[i])
-        #data = data.astype('int')
-        #data = repr.apply_tensor_mask(data, self.mask)
-        #for i, value in enumerate(data):
-        #    param.data[i] = value
+        self.mask = self.generate_tensor_mask_bit(repr.width, param.shape[0])
+        data = param.detach().cpu().numpy()
+        for i, _ in enumerate(data):
+            data[i] = repr.convert_to_repr(data[i])
+        data = data.astype('int')
+        data = repr.apply_tensor_mask(data, self.mask)
+        for i, value in enumerate(data):
+            param.data[i] = value
 
         if scaling != 'none':
             with torch.no_grad():
