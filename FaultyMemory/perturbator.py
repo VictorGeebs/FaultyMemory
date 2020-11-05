@@ -69,7 +69,8 @@ class Perturbator(ABC):
 
     def unfreeze_faults(self):
         self.freeze = False
-        del self.saved_sample
+        if self.saved_sample is not None:
+            del self.saved_sample
 
     def to_json(self):
         dict = {'name': type(self).__name__,
