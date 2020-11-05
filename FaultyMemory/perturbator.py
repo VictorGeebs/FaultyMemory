@@ -2,8 +2,6 @@ import torch
 import torch.nn as nn
 from abc import ABC, abstractclassmethod
 
-from FaultyMemory.representation import *
-
 # TODO : perturbator : generer un tableau de taille du tenseur + 1 dimension ajoutée avec le sample booleen
 # géré en C : concaténer la dim +1 pour obtenir le masque de perturbation `reduce_uint`
 # géré en pytorch ou en c: xor, or, and
@@ -84,7 +82,7 @@ class DigitalPerturbator(Perturbator):
         if reduce:
             sample.squeeze_(dim=-1) 
             sample = reduce_uint(sample.to(torch.bool))
-        return sample
+        return sample.to(torch.uint8)
 
 
 class AnalogPerturbator(Perturbator):
