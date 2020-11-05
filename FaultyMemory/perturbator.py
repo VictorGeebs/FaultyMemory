@@ -33,7 +33,7 @@ class Perturbator(ABC):
         if not self.freeze:
             sample = self.distribution.sample(
                 sample_shape=tensor.size())
-            sample = self.handle_sample(sample, reduce=sample.shape == tensor.shape)
+            sample = self.handle_sample(sample, reduce=sample.shape != tensor.shape)
             assert tensor.shape == sample.shape, 'Sampled fault mask shape is not the same as tensor to perturb !'
         else:
             sample = self.saved_sample
@@ -83,12 +83,15 @@ class DigitalPerturbator(Perturbator):
     def handle_sample(self, sample: nn.Tensor, reduce: bool) -> nn.Tensor:
         if reduce:
             sample.squeeze_(dim=-1) 
-        return reduce_uint(sample.to(torch.bool))
+            sample = reduce_uint(sample.to(torch.bool))
+        return sample
 
 
 class AnalogPerturbator(Perturbator):
     repr_compatibility = ['ANALOG']
     def handle_sample(self, sample: nn.Tensor, reduce: bool) -> nn.Tensor:
+        if reduce:
+            raise ValueError('An analog perturbation should be 1d by definition, the sampled distribution does not follow this principle')
         return sample
 
 
