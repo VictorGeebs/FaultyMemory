@@ -18,7 +18,11 @@ class Representation(ABC):
         self.width = width
 
     def compatibility(self, other: Perturbator) -> bool:
-        return self.__COMPAT__ in other.repr_compatibility
+        return self.__COMPAT__ in other.repr_compatibility and self.width == other.width
+
+    # @abstractclassmethod TODO
+    # def quantize(self, tensor: nn.Tensor) -> nn.Tensor:
+    #     pass
 
     @abstractclassmethod
     def encode(self, tensor: nn.Tensor) -> nn.Tensor:
@@ -37,13 +41,21 @@ class Representation(ABC):
                 'width': self.width}
         return dict
 
+class JustQuantize(Representation):
+    r''' Subclass and define encode to an arbitrary representation
+    Will not work with any repr ! (since we `JustQuantize`)
+    '''
+    def decode(self, tensor: nn.Tensor) -> nn.Tensor:
+        return tensor
+    
+
 @add_repr
 class AnalogRepresentation(Representation):
     __COMPAT__ = 'ANALOG'
     def __init__(self) -> None:
         r''' A special case representation for e.g. memristors perturbations
         '''
-        super.__init__(width=0.)
+        super.__init__(width=1) # width is 1 in this case, each value of the tensor is a 1d float
 
     def encode(self, tensor: nn.Tensor) -> nn.Tensor:
         return tensor
@@ -51,9 +63,11 @@ class AnalogRepresentation(Representation):
     def decode(self, tensor: nn.Tensor) -> nn.Tensor:
         return tensor
 
+
 class DigitalRepresentation(Representation):
     __COMPAT__ = 'DIGITAL'
     pass
+
 
 @add_repr
 class BinaryRepresentation(DigitalRepresentation):
@@ -67,6 +81,7 @@ class BinaryRepresentation(DigitalRepresentation):
     def decode(self, tensor: nn.Tensor) -> nn.Tensor:
         return (tensor * 2) - 1
 
+
 @add_repr
 class ScaledBinaryRepresentation(DigitalRepresentation):
     def __init__(self) -> None:
@@ -79,6 +94,7 @@ class ScaledBinaryRepresentation(DigitalRepresentation):
 
     def decode(self, tensor: nn.Tensor) -> nn.Tensor:
         return ((tensor * 2) - 1) * self.mean
+
 
 @add_repr
 class ClusteredRepresentation(DigitalRepresentation):
@@ -105,9 +121,9 @@ class ClusteredRepresentation(DigitalRepresentation):
 def construct_repr(repr_dict, user_repr = {}):
     r"""
     Constructs a representation according to the dictionnary provided.
-    The dictionnary should have a field for 'name' equals to the name of the class, the width and wether or not it is unsigned.
+    The dictionnary should have a field for 'name' equals to the name of the class, the width of the repr
     """
-    all_repr = dict(REPR_DICT, **user_repr)
     if repr_dict is None:
         return None
+    all_repr = dict(REPR_DICT, **user_repr)
     return all_repr[repr_dict["name"]](width=repr_dict["width"])

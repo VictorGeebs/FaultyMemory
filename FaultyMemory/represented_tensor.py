@@ -20,10 +20,12 @@ class RepresentedTensor(ABC):
 
     def to_repr(self, x) -> None:
         encoded = self.repr.encode(x)
+        assert encoded.shape == x.shape, 'The encoded version is not of the same shape as the input tensor'
         perturbed = self.apply_perturb_to_encoded(encoded)
         return self.repr.decode(perturbed).to(x.dtype)
 
     def apply_perturb_to_encoded(self, base) -> nn.Tensor:
+        # TODO : si pert == 0, just quantize
         for pert in self.pert:
             if not pert:
                 continue
