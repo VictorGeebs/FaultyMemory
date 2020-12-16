@@ -172,6 +172,8 @@ def listify(obj: object):
 def dictify(obj: object):
     if isinstance(obj, dict):
         return obj
+    elif obj is None:
+        return {}
     else:
         return {str(type(obj).__name__): obj}
 
@@ -189,3 +191,10 @@ def ten_exists(model_dict: dict, name: str):
     except AssertionError as id:
         print(id)
         return
+
+def sanctify_ten(ten: nn.Tensor):
+    r''' Take any tensor, make a deepcopy of it, and ensure the deepcopy is on CPU
+
+    Note: `deepcopy` is needed in case the tensor is already on CPU, in which case `.cpu()` do not make a copy
+    '''
+    return copy.deepcopy(ten).cpu()

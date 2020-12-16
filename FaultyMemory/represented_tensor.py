@@ -1,13 +1,13 @@
-from FaultyMemory.utils import dictify, ten_exists
+from FaultyMemory.utils import dictify, ten_exists, sanctify_ten
 from FaultyMemory.perturbator import Perturbator
 from typing import Dict, Optional, Tuple, Union
 from FaultyMemory.representation import Representation
 import numpy as np
 import torch.nn as nn
-from abc import ABC
+from abc import ABC, abstractclassmethod
 
 class RepresentedTensor(ABC):
-    def __init__(self, model: nn.Module, name: str, repr: Representation = None, pert: Optional[Union[Dict, Perturbator]] = {}) -> None:
+    def __init__(self, model: nn.Module, name: str, repr: Representation, pert: Optional[Union[Dict, Perturbator]] = {}) -> None:
         self.name = name
         self.repr = repr
         self.pert = dictify(pert)
@@ -19,6 +19,7 @@ class RepresentedTensor(ABC):
         return self.where_ten()[self.name]
 
     def to_repr(self, x) -> None:
+        # TODO mode d'opération sans les perturb ?
         encoded = self.repr.encode(x)
         assert encoded.shape == x.shape, 'The encoded version is not of the same shape as the input tensor'
         perturbed = self.apply_perturb_to_encoded(encoded)
@@ -30,23 +31,32 @@ class RepresentedTensor(ABC):
             if not pert:
                 continue
             assert self.repr.compatibility(pert), 'The perturbation is not compatible with the representation'
-            base = pert(base, self.repr.width)
+            base = pert(base)
         return base
 
+    @abstractclassmethod
     def quantize_perturb(self) -> None:
         r''' Overloaded operator that manages the quantization
         '''
         pass
 
-    def restore(self) -> None:
-        r''' Overloaded operator that manages the restoration
-        '''
-        #TODO is useful ? can be managed from outside (otherwise RepresentedParameter needs to hold save)
-        pass
+    def save(self, ten) -> None:
+        if self.saved_ten is None:
+            self.saved_ten = sanctify_ten(ten)
+            self.ref_ten = ten
+        else:
+            print("Another tensor is already saved") #TODO test if 2 GPU trigger this print
 
+    def restore(self) -> None:
+        if self.saved_ten is not None:
+            self.ref_ten.data.copy_(self.saved_ten.data.to(self.ref_ten))
+            del self.saved_ten
+
+    @abstractclassmethod
     def where_ten(self) -> dict: 
         pass
 
+    @abstractclassmethod
     def compute_bitcount(self) -> None:
         r''' Overloaded operator that set self.bitcount
         '''
@@ -55,11 +65,11 @@ class RepresentedTensor(ABC):
     def energy_consumption(self, a=12.8) -> Tuple(int, float):
         assert self.bitcount is not None, 'Bitcount has not been set in `compute_bitcount`'
         if 'BitwisePert' in self.pert:
-            p = self.pert['BitwisePert'].p
+            p = self.pert['BitwisePert'].distribution.probs
         else:
             print('There are no consumption model other than for Bitwise pert yet')
             p = 0.
-        current_consumption = -np.log(p/a) if p > 0 else 1
+        current_consumption = -np.log(p/a) if p > 0 else 1.
         return self.bitcount, self.bitcount * current_consumption
 
 
@@ -74,18 +84,21 @@ class RepresentedParameter(RepresentedTensor):
 
     def quantize_perturb(self) -> None:
         ten = self.access_ten()
+        self.save(ten)
         ten_prime = self.to_repr(ten)
         ten.data.copy_(ten_prime.data)
 
 
 class RepresentedActivation(RepresentedTensor):
     r""" Seamlessly cast an activation tensor to faulty hardware
+    TODO do not support save/restore yet
     """
     def compute_bitcount(self) -> None:
         def hook_bitcount(self, module, input, output):
             self.bitcount = (output.numel() / output.shape[0]) * self.repr.width
-            hook.remove()
-        hook = self.access_ten().register_forward_hook(hook_bitcount)
+            self.hook_bitcount.remove()
+            del self.hook_bitcount
+        self.hook_bitcount = self.access_ten().register_forward_hook(hook_bitcount)
 
     def where_ten(self) -> dict:
         return self.model.named_modules()
@@ -99,6 +112,8 @@ class RepresentedActivation(RepresentedTensor):
     def __del__(self):
         if self.hook:
             self.hook.remove()
+        if self.hook_bitcount:
+            self.hook_bitcount.remove()
         super().__del__()
 
 

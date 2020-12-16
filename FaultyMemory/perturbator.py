@@ -5,6 +5,7 @@ from abc import ABC, abstractclassmethod
 # TODO : perturbator : generer un tableau de taille du tenseur + 1 dimension ajoutée avec le sample booleen
 # géré en C : concaténer la dim +1 pour obtenir le masque de perturbation `reduce_uint`
 # géré en pytorch ou en c: xor, or, and
+# TODO : gérer différentes stratégies de perturbation: filterwise, ...
 
 # TODO: remove and cleanup 
 from torch.utils.cpp_extension import load
@@ -31,7 +32,7 @@ class Perturbator(ABC):
         if not self.freeze:
             sample = self.distribution.sample(
                 sample_shape=tensor.size())
-            sample = self.handle_sample(sample, reduce=sample.shape != tensor.shape)
+            sample = self.handle_sample(sample, reduce=(sample.shape != tensor.shape))
             assert tensor.shape == sample.shape, 'Sampled fault mask shape is not the same as tensor to perturb !'
         else:
             sample = self.saved_sample
