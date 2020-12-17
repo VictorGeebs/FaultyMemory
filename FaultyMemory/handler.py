@@ -1,6 +1,6 @@
 import json
-from scipy.cluster.vq import kmeans, vq
 
+from FaultyMemory.cluster import Cluster
 from FaultyMemory.perturbator import Perturbator
 from FaultyMemory.representation import Representation
 from FaultyMemory.represented_tensor import RepresentedParameter, RepresentedActivation, construct_type
@@ -117,9 +117,7 @@ class Handler(object):
         Keys for tensors have to be contained in net.named_parameters() to be found\n
         An example of a dictionnary can be found in the file ./profiles/default.json
         """
-        nb_clusters = handler_dict['nb_clusters']
-        while len(self.clusters) < nb_clusters:
-            self.clusters.append(C.Cluster())
+        self.clusters = Cluster(handler_dict['nb_clusters'])
 
         # Represented tensors concat
         tensors_dict = handler_dict['tensors']
@@ -135,31 +133,17 @@ class Handler(object):
         }
         return handler_dict
 
-    def assign_clusters(self):
-        """
+    def assign_clusters(self, clustering_criterion: str = 'BernoulliXORPerturbation'):
+        r"""
         Applies k-means clustering to the perturbation rates of all
         perturbations to group them in the handler's clusters.
         Currently only supports Bitwise Perturbations
         """
-        running_perts = {}
-        for name in self.tensor_info:
-            item = self.tensor_info[name]
-            pert_list = item[1]
-            pert_names = []
-            prob_list = []
-            if pert_list is not None:
-                for pert in pert_list:
-                    pert_names.append(pert.__class__.__name__)
-                    prob_list.append(pert.p)
-            pert_names = '_'.join(pert_names)
-            if pert_names not in running_perts:
-                running_perts[pert_names] = [(name, prob_list)]
-            else:
-                running_perts[pert_names].append((name, prob_list))
+        filtered_perts = [ten.pert[clustering_criterion]for ten in self.represented_ten if clustering_criterion in ten.pert]
+        assert len(filtered_perts) > 0, f'Trying to cluster with {clustering_criterion} yield 0 represented_tensor'
 
-        running_perts.pop('')
-
-        assert len(running_perts) <= len(self.clusters), "More different perturbations than clusters available, cannot assign tensors to clusters"
+        # Delegate perts to `Cluster` obj
+        self.clusters.assign_perts(filtered_perts)
 
         # ONLY BITWISEPERT FOR THE TIME BEING
         bitwises = running_perts['BitwisePert']

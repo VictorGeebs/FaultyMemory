@@ -8,6 +8,8 @@ import FaultyMemory.perturbator as P
 import FaultyMemory.cluster as C
 import FaultyMemory.handler as H
 import re
+import math
+from numbers import Number
 from tqdm import tqdm
 
 
@@ -163,13 +165,13 @@ class Xor(nn.Module):
         return x
 
 
-def listify(obj: object):
+def listify(obj: object) -> list:
     if isinstance(obj, list):
         return obj
     else:
         return [obj]
 
-def dictify(obj: object):
+def dictify(obj: object) -> dict:
     if isinstance(obj, dict):
         return obj
     elif obj is None:
@@ -187,16 +189,21 @@ def typestr_to_type(obj):
         res = re.match('\'([A-z]*)\'', str(type(obj)))
         return res.group(1)
 
-def ten_exists(model_dict: dict, name: str):
+def ten_exists(model_dict: dict, name: str) -> None:
     try:
         assert name in model_dict, f"Specified name {name} not in model_dict and no reference given, cannot add this tensor"
     except AssertionError as id:
         print(id)
         return
 
-def sanctify_ten(ten: nn.Tensor):
+def sanctify_ten(ten: nn.Tensor) -> nn.Tensor:
     r''' Take any tensor, make a deepcopy of it, and ensure the deepcopy is on CPU
 
     Note: `deepcopy` is needed in case the tensor is already on CPU, in which case `.cpu()` do not make a copy
     '''
     return copy.deepcopy(ten).cpu()
+
+def sanitize_number(value: Number, mini: Number=float("-inf"), maxi: Number=math.inf, rnd: bool=False) -> Number:
+    if rnd:
+        value = round(value)
+    return mini if value < mini else maxi if value > maxi else value
