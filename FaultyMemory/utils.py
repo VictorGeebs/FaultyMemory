@@ -174,6 +174,8 @@ def dictify(obj: object):
         return obj
     elif obj is None:
         return {}
+    elif isinstance(obj, list):
+        return {str(type(o).__name__): o for o in obj}
     else:
         return {str(type(obj).__name__): obj}
 

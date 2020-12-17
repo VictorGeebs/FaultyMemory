@@ -1,10 +1,15 @@
 from FaultyMemory.utils import dictify, ten_exists, sanctify_ten
-from FaultyMemory.perturbator import Perturbator
+from FaultyMemory.perturbator import Perturbator, construct_pert
 from typing import Dict, Optional, Tuple, Union
-from FaultyMemory.representation import Representation
+from FaultyMemory.representation import Representation, construct_repr
 import numpy as np
 import torch.nn as nn
 from abc import ABC, abstractclassmethod
+
+TYPE_DICT = {}
+def add_type(func):
+    TYPE_DICT[func.__name__] = func
+    return func
 
 class RepresentedTensor(ABC):
     def __init__(self, model: nn.Module, name: str, repr: Representation, pert: Optional[Union[Dict, Perturbator]] = {}) -> None:
@@ -14,6 +19,13 @@ class RepresentedTensor(ABC):
         self.model = model
         ten_exists(self.where_ten(), name)
         self.compute_bitcount()
+
+    @classmethod
+    def from_dict(cls, dict: dict, model: nn.Module):
+        return cls(model, 
+                   dict['name'],
+                   construct_repr(dict['repr']),
+                   {pert['name']: construct_pert(pert) for pert in dict['pert']})
 
     def access_ten(self):
         return self.where_ten()[self.name]
@@ -72,7 +84,14 @@ class RepresentedTensor(ABC):
         current_consumption = -np.log(p/a) if p > 0 else 1.
         return self.bitcount, self.bitcount * current_consumption
 
+    def to_json(self):
+        return {'type': type(self).__name__,
+                'name': self.name,
+                'repr': self.repr.to_json(),
+                'pert': [pert.to_json() for pert in self.pert]}
 
+
+@add_type
 class RepresentedParameter(RepresentedTensor):
     r""" Seamlessly cast a parameter tensor to faulty hardware
     """
@@ -89,6 +108,7 @@ class RepresentedParameter(RepresentedTensor):
         ten.data.copy_(ten_prime.data)
 
 
+@add_type
 class RepresentedActivation(RepresentedTensor):
     r""" Seamlessly cast an activation tensor to faulty hardware
     TODO do not support save/restore yet
@@ -121,4 +141,9 @@ class RepresentedModule_(RepresentedTensor):
     r''' Replace a module with a represented one
     TODO the goal is to not be seamless, i.e. the network definition changes
     '''
-    raise NotImplementedError('In place module replacement is not supported yet')
+    pass
+
+
+def construct_type(model: nn.Module,
+                   type_dict: dict):
+    return TYPE_DICT[type_dict.pop('type')].from_dict(type_dict, model)
