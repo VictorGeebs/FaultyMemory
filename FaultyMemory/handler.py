@@ -19,13 +19,12 @@ class Handler(object):
         self.net = net
         self.represented_ten = []
 
-        self.clusters = clusters if clusters is not None else []
-        self.clustering = False
+        self.clusters = Cluster()
 
     def __str__(self):
         print("Handler: ")
-        for name in self.tensor_info:
-            print(name, ": ", self.tensor_info[name])
+        for ten in self.represented_ten:
+            print(ten)
         return ''
 
     def __call__(self, x):
@@ -117,18 +116,18 @@ class Handler(object):
         Keys for tensors have to be contained in net.named_parameters() to be found\n
         An example of a dictionnary can be found in the file ./profiles/default.json
         """
-        self.clusters = Cluster(handler_dict['nb_clusters'])
+        self.clusters.change_nb_clusters(handler_dict['nb_clusters'])
 
         # Represented tensors concat
         tensors_dict = handler_dict['tensors']
         self.represented_ten += [construct_type(ten) for ten in tensors_dict]
 
         # Cluster assignement
-        self.assign_clusters()
+        self.assign_clusters() #TODO read and pass arg `clustering_criterion`
 
     def to_dict(self):
         handler_dict = {
-            "nb_clusters": len(self.clusters),
+            "nb_clusters": self.clusters.nb_clusters,
             "tensors": [tensor.to_json() for tensor in self.represented_ten]
         }
         return handler_dict
@@ -139,47 +138,18 @@ class Handler(object):
         perturbations to group them in the handler's clusters.
         Currently only supports Bitwise Perturbations
         """
-        filtered_perts = [ten.pert[clustering_criterion]for ten in self.represented_ten if clustering_criterion in ten.pert]
+        filtered_perts = [ten.pert[clustering_criterion] for ten in self.represented_ten if clustering_criterion in ten.pert]
         assert len(filtered_perts) > 0, f'Trying to cluster with {clustering_criterion} yield 0 represented_tensor'
 
         # Delegate perts to `Cluster` obj
         self.clusters.assign_perts(filtered_perts)
-
-        # ONLY BITWISEPERT FOR THE TIME BEING
-        bitwises = running_perts['BitwisePert']
-        bitwise_probs = [item[1][0] for item in bitwises]
-        centers, _ = kmeans(bitwise_probs, len(self.clusters))
-        groups, _ = vq(bitwise_probs, centers)
-
-        for tensor, cluster in zip(bitwises, groups):
-            name = tensor[0]
-            tensor_ref = self.tensor_info[name][0]
-            repr = self.tensor_info[name][2]
-            self.clusters[cluster].add_tensor(tensor_ref, repr)
-
-        for cluster, rate in zip(self.clusters, centers):
-            pert_dict = {
-                "name": "BitwisePert",
-                "p": rate}
-            pert = P.construct_pert(pert_dict)
-            cluster.set_perturb([pert])
-
-    def toggle_clustering(self):
-        """
-        Turns on or off clustering, which groups tensor perturbations with
-        nearby perturbation rates.
-        """
-        self.clustering = not self.clustering
-        return self.clustering
+        self.clusters.cluster()
                         
     def train(self) -> None:
         self.net.train()
         
     def eval(self) -> None:
         self.net.eval()
-
-    # def get_all(self) -> dict: #TODO en quête d'un meilleur nom
-    #     return dict(self.tensor_info, **self.acti_info) 
 
     def energy_consumption(self) -> Tuple(int, float):
         r""" Return (max_consumption, current_consumption)

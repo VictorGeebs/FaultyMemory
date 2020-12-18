@@ -10,6 +10,7 @@ import FaultyMemory.handler as H
 import re
 import math
 from numbers import Number
+import numpy as np
 from tqdm import tqdm
 
 
@@ -207,3 +208,10 @@ def sanitize_number(value: Number, mini: Number=float("-inf"), maxi: Number=math
     if rnd:
         value = round(value)
     return mini if value < mini else maxi if value > maxi else value
+
+def kmeans_nparray(np_array: np.array, nb_clusters: int) -> np.array:
+    from scipy.cluster.vq import kmeans, vq, whiten
+    whitened = whiten(np_array)
+    codebook, _ = kmeans(whitened, nb_clusters)
+    encoded, _ = vq(np_array, codebook)
+    return np.array([codebook[i] for i in encoded])
