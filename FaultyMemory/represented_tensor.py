@@ -77,7 +77,7 @@ class RepresentedTensor(ABC):
     def energy_consumption(self, a=12.8) -> Tuple(int, float):
         assert self.bitcount is not None, 'Bitcount has not been set in `compute_bitcount`'
         if 'BitwisePert' in self.pert:
-            p = self.pert['BitwisePert'].distribution.probs
+            p = self.pert['BitwisePert'].distribution.probs.cpu().numpy()
         else:
             print('There are no consumption model other than for Bitwise pert yet')
             p = 0.
