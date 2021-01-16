@@ -70,9 +70,7 @@ class BitwisePert(Perturbator):
         return self.__str__()
 
     def cpp_perturb(self, param: torch.tensor, repr: Optional[Perturbator] = None, scaling: Optional[str] = 'none'):
-        param_shape, param_mean = param.shape, torch.mean(torch.abs(param)).item()
-        param = param.flatten()
-        Cpp_Pert.perturb(param, self.p)
+        Cpp_Pert.perturb(param, repr.width, self.p)
 
     def perturb(self, param: torch.tensor, repr: Optional[Perturbator] = None, scaling: Optional[str] = 'none'):
         param_shape, param_mean = param.shape, torch.mean(torch.abs(param)).item()
