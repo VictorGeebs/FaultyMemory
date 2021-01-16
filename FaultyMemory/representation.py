@@ -1,136 +1,129 @@
-import torch.nn as nn
 import numpy as np
+import torch
+import torch.nn as nn
+from FaultyMemory.perturbator import Perturbator
+from abc import ABC, abstractclassmethod
 
+REPR_DICT = {}
+def add_repr(func):
+    REPR_DICT[func.__name__] = func
+    return func
 
-class Representation:
+class Representation(ABC):
+    r""" Base class for custom representations
     """
-    Base class for custom representations
-    This base class is used to represent ints and uints of arbitrary width,
-    though capped at width 8 at the moment for memory reasons
-    """
-
-    def __init__(self, width=8, unsigned=True):
+    __COMPAT__ = None
+    def __init__(self, width: int = 8):
+        super().__init__()
         self.width = width
-        self.unsigned = unsigned
 
-    def __str__(self):
-        print("Representation")
-        return ""
+    def compatibility(self, other: Perturbator) -> bool:
+        return self.__COMPAT__ in other.repr_compatibility and self.width == other.width
 
-    def __repr__(self):
-        return self.__str__()
+    # @abstractclassmethod TODO
+    # def quantize(self, tensor: nn.Tensor) -> nn.Tensor:
+    #     pass
 
-    def convert_tensor(self, tensor):
-        param_shape = tensor.shape
-        param = tensor.flatten()
-        data = param.detach().numpy()
-        for i, value in enumerate(data):
-            param.data[i] = self.convert_to_repr(value)
-        tensor = param.view(param_shape)
+    @abstractclassmethod
+    def encode(self, tensor: nn.Tensor) -> nn.Tensor:
+        pass
 
-    def convert_to_repr(self, value):
-        """
-        Converts a value to the representation and returns it as its numpy
-        version
-        """
-        if self.unsigned:
-            value = value % (pow(2, self.width))
-            return np.uint8(value)
-        else:
-            value = value % (pow(2, self.width))
-            if value >= (pow(2, self.width) / 2):
-                value = value - pow(2, self.width)
-        return np.int8(value)
-
-    def apply_mask(self, value, mask):
-        """
-        Returns the XOR of the mask and the value, bitwise
-        """
-        return value ^ mask
-
-    def apply_tensor_mask(self, tensor, mask):
-        """
-        A parallelised version of apply_mask, which returns the bitwise XOR of
-        an entire tensor with a tensor mask
-        """
-        param = np.bitwise_xor(tensor, mask)
-        return param
+    @abstractclassmethod
+    def decode(self, tensor: nn.Tensor) -> nn.Tensor:
+        pass
 
     def to_json(self):
-        """
+        r"""
         Creates and returns a dictionnary with the necessary information to
         re-construct this instance
         """
-        dict = {}
-        dict["name"] = self.__class__.__name__
-        dict["width"] = self.width
-        dict["unsigned"] = self.unsigned
+        dict = {'name': type(self).__name__, 
+                'width': self.width}
         return dict
 
+class JustQuantize(Representation):
+    r''' Subclass and define encode to an arbitrary representation
+    Will not work with any repr ! (since we `JustQuantize`)
+    '''
+    def decode(self, tensor: nn.Tensor) -> nn.Tensor:
+        return tensor
+    
 
-class BinaryRepresentation(Representation):
-    """
-    Binary Representation can take two forms:
-    Unsigned: 0 or 1
-    Signed: -1 or 1
-    """
+@add_repr
+class AnalogRepresentation(Representation):
+    __COMPAT__ = 'ANALOG'
+    def __init__(self) -> None:
+        r''' A special case representation for e.g. memristors perturbations
+        '''
+        super.__init__(width=1) # width is 1 in this case, each value of the tensor is a 1d float
 
-    def __init__(self, unsigned=False, width=1):  # TODO width always one?
-        super(BinaryRepresentation, self).__init__()
-        self.width = 1
-        self.unsigned = unsigned
+    def encode(self, tensor: nn.Tensor) -> nn.Tensor:
+        return tensor
 
-    def convert_to_repr(self, value):
-        if not self.unsigned:
-            if value <= 0:
-                value = -1
-            else:
-                value = 1
-            # suggestion: value = - (value <= 0) + (value > 0)
-            # les branchements sont généralement couteux sur la performance, on peut donc y préferer les formulations comme celle-ci
-            # c'est une micro-optimisation, qu'il faudrait idéalement benchmarker sur le code en c
-        else:
-            if value >= 0.5:
-                value = 1
-            else:
-                value = 0
-        return value
-
-    def apply_mask(self, value, mask):
-        if mask == 0:
-            return value
-        else:
-            return value * -1
-
-    def apply_tensor_mask(self, tensor, mask):
-        mask = mask.astype("int")
-        mask = mask * -2 + 1
-        param = tensor * mask
-        return param
+    def decode(self, tensor: nn.Tensor) -> nn.Tensor:
+        return tensor
 
 
-"""
-This dictionnary is used to construct representations from a JSON input
-"""
-RepresentationDict = {
-    "Representation": Representation,
-    "BinaryRepresentation": BinaryRepresentation,
-}
-
-"""
-Constructs a representation according to the dictionnary provided.
-The dictionnary should have a field for 'name' equals to the name of the class, the width and wether or not it is unsigned.
-"""
+class DigitalRepresentation(Representation):
+    __COMPAT__ = 'DIGITAL'
+    pass
 
 
-def construct_repr(repr_dict):
-    """
+@add_repr
+class BinaryRepresentation(DigitalRepresentation):
+    def __init__(self) -> None:
+        super().__init__(width=1)
+
+    def encode(self, tensor: nn.Tensor) -> nn.Tensor:
+        tensor = torch.sign(tensor) + 2 - 1
+        return tensor.to(torch.uint8)
+
+    def decode(self, tensor: nn.Tensor) -> nn.Tensor:
+        return (tensor * 2) - 1
+
+
+@add_repr
+class ScaledBinaryRepresentation(DigitalRepresentation):
+    def __init__(self) -> None:
+        super().__init__(width=1)
+
+    def encode(self, tensor: nn.Tensor) -> nn.Tensor:
+        self.mean = torch.mean(torch.abs(tensor))
+        tensor = torch.sign(tensor) + 2 - 1
+        return tensor.to(torch.uint8)
+
+    def decode(self, tensor: nn.Tensor) -> nn.Tensor:
+        return ((tensor * 2) - 1) * self.mean
+
+
+@add_repr
+class ClusteredRepresentation(DigitalRepresentation):
+    def __init__(self, num_cluster: int = 4) -> None:
+        next = 2 ** np.ceil(np.log(num_cluster)/np.log(2))
+        if next != num_cluster:
+            Warning.warn('Number of cluster not fully using all bits, rounding up to the nearest power of 2 (max=8)')
+        super().__init__(width=min(np.log(next)/np.log(2), 8))
+
+    def encode(self, tensor: nn.Tensor) -> nn.Tensor:
+        from scipy.cluster.vq import vq, kmeans, whiten
+        whitened = whiten(tensor.clone().cpu().numpy().flatten())
+        self.codebook, _ = kmeans(whitened, 2 ** self.width)
+        cluster, _ = vq(whitened, self.codebook)
+        return torch.tensor(cluster).view(tensor.shape).to(torch.uint8)
+
+    def decode(self, tensor: nn.Tensor) -> nn.Tensor:
+        shape = tensor.shape
+        tensor = tensor.flatten()
+        tensor = torch.gather(torch.from_numpy(self.codebook), 0, tensor)
+        return tensor.view(shape)
+
+
+def construct_repr(repr_dict, user_repr = {}):
+    r"""
     Constructs a representation according to the dictionnary provided.
-    The dictionnary should have a field for 'name' equals to the name of the class, the width and wether or not it is unsigned.
+    The dictionnary should have a field for 'name' equals to the name of the class, the width of the repr
     """
     if repr_dict is None:
         return None
-    instance = RepresentationDict[repr_dict["name"]](
-        width=repr_dict["width"], unsigned=repr_dict["unsigned"]
-    )
-    return instance
+    all_repr = dict(REPR_DICT, **user_repr)
+    return all_repr[repr_dict["name"]](width=repr_dict["width"])

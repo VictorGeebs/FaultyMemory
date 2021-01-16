@@ -1,85 +1,59 @@
+from typing import Callable, List
+
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import copy
-import numpy as np
-import FaultyMemory.perturbator as P
+
+from FaultyMemory.perturbator import Perturbator
+from FaultyMemory.utils import kmeans_nparray, sanctify_ten, sanitize_number
 
 
-class Cluster():
+class Cluster(object):
     """
     A faulty memory cluster that stores a collection of tensors to perturb them during the forward pass
+
+    Args:
+        nb_clusters: number of clusters to reduce to (default 0 -> no clustering)
     """
-    def __init__(self, perturb=None):
-        self.perturb = perturb if perturb is not None else []
-        self.tensors = []
+    def __init__(self, nb_clusters: int = 0):
+        self.change_nb_clusters(nb_clusters)
 
     def __str__(self):
         print("Perturbs:")
         for pert in self.perturb:
             print(pert)
-        
-        print("Tensors:")
-        for tensor in self.tensors:
-            print(tensor)
-        return ""
 
-    def perturb_tensors(self):
-        """
-        Applies every perturbation specified in this cluster to each of its tensors.\n
-        Tensors are modified in-place, without modifying their reference.
-        """
-        for tensor in self.tensors:
-            for perturb in self.perturb:
-                perturb(tensor[0], tensor[1])
+    def change_nb_clusters(self, nb_clusters: int = 0):
+        nb_clusters = sanitize_number(nb_clusters, min=0, rnd=True)
+        self.nb_clusters = nb_clusters
+        if self.pert:
+            self.de_cluster()
+            self.cluster()
 
-    def add_tensor(self, tensor, repr=None):
-        """
-        Adds the specified tensor to the cluster's memory after verifying it isn't already present.
-        """
-        if self.contains(tensor) == False:
-            self.tensors.append((tensor, repr))
+    def assign_perts(self, perturbations: list[Perturbator]):
+        self.pert = perturbations
+        self.ref_params = torch.stack([pert.distribution._param.view(-1) for pert in self.pert])
 
-    def remove_tensor(self, tensor):
-        """
-        Removes the specified tensor from the cluster's memory and its saved counterpart.
-        """
-        for i, tens in enumerate(self.tensors):
-            if tens is tensor[0]:
-                self.tensors.pop(i)
-    
-    def add_module(self, module, repr=None):
-        """
-        Adds every tensor in the specified module (nn.Module) to the cluster's memory with TensorCluster.add_tensor().
-        """
-        for param in list(module.parameters()):
-            self.add_tensor(param, repr)
+    def cluster(self, cluster_func: Callable = kmeans_nparray) -> None:
+        r""" Cluster the perturbations held by this object
 
-    def remove_module(self, module):
+        Args:
+            cluster_func: a callable taking two args: a numpy array (1d) and the number of clusters, returns a numpy array (1d) 
         """
-        Removes every tensor from the specified module (nn.Module) from the cluster's memory and its saved counterpart.
-        """
-        for tensor in list(module.parameters()):
-            self.remove_tensor(tensor)
+        if not self.pert:
+            raise ValueError('Tried to cluster with no assigned perturbations')
+        if self.nb_clusters == 0:
+            return
 
-    def contains(self, tensor):
-        """
-        Verifies if the specified tensor is already in the cluster's memory.
-        """
-        for tens in self.tensors:
-            if tens is tensor[0]:
-                return True
-        return False
+        if not self.saved:
+            self.saved = True
+            self.saved_params = sanctify_ten(self.ref_params)
+        new_assignment = cluster_func(np_array=self.ref_params.cpu().numpy(), 
+                                      nb_clusters=self.nb_clusters)
+        assert new_assignment.shape == self.ref_params.cpu().numpy().shape
+        self.ref_params.data.copy_(torch.from_numpy(new_assignment))
 
-    def add_perturbation(self, perturb):
-        self.perturb.append(perturb)
-
-    def remove_perturbation(self, perturb):
-        self.perturb.pop(perturb, None)
-        
-    def set_perturb_rate(self, pert_rate):
-        for i, p in enumerate(pert_rate):
-            self.perturb[i].set_perturb_rate(p)
-    
-    def set_perturb(self, pert_list):
-        self.perturb = pert_list
+    def de_cluster(self):
+        if not self.saved:
+            print('Nothing to de-cluster !')
+        else:
+            self.saved = False
+            self.ref_params.data.copy_(self.saved_params.data)

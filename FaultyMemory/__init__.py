@@ -20,4 +20,5 @@ from FaultyMemory.handler import Handler
 
 __all__ = [
     'Handler',
+    'RepresentedTensor'
 ]
