@@ -43,14 +43,7 @@ of saving the types of perturbation and the representation you wish to use in
 your model. To do so, simply instanciate a Handler object, passing your network
 as a constructor parameter.
 """
-<<<<<<< HEAD:tutorial/tutorial.py
-
-from ..lib import handler as H
-
-# import .lib/handler as H
-=======
 import FaultyMemory.handler as H
->>>>>>> 8abf7912f64be607e93833d92992894ae20cd8bd:tutorial/Tutorial.py
 
 my_handler = H.Handler(net)
 

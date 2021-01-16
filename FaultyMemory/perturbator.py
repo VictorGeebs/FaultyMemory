@@ -86,7 +86,6 @@ class DigitalPerturbator(Perturbator):
             sample = reduce_uint(sample.to(torch.bool))
         return sample.to(torch.uint8)
 
-
 class AnalogPerturbator(Perturbator):
     repr_compatibility = ['ANALOG']
     def handle_sample(self, sample: nn.Tensor, reduce: bool) -> nn.Tensor:
