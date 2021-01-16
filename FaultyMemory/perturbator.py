@@ -1,236 +1,132 @@
-import random
-import numpy as np
-import math as math
-import warnings
-from json import JSONEncoder
 import torch
+import torch.nn as nn
+from abc import ABC, abstractclassmethod
 
-from FaultyMemory.representation import *
-
-from typing import Optional
+# TODO : perturbator : generer un tableau de taille du tenseur + 1 dimension ajoutée avec le sample booleen
+# géré en C : concaténer la dim +1 pour obtenir le masque de perturbation `reduce_uint`
+# géré en pytorch ou en c: xor, or, and
+# TODO : gérer différentes stratégies de perturbation: filterwise, ...
 
 # TODO: remove and cleanup 
 from torch.utils.cpp_extension import load
 Cpp_Pert = load(name="Cpp_Pert", sources=["FaultyMemory/cpp/perturbation.cpp"])
 
+PERT_DICT = {}
+def add_pert(func):
+    PERT_DICT[func.__name__] = func
+    return func
 
-BINARY_SCALING = ['none', 'he', 'mean']
-
-
-class Perturbator():
-    """
+class Perturbator(ABC):
+    r"""
     Base class for all perturbators that modelize calculation, memory or
     circuit failure.
     """
-    def __init__(self, p=1.):
-        assert (p >= 0. and p <= 1.), "probability p must be between 0 and 1"
-        self.p = p
+    repr_compatibility = []
+    def __init__(self, **kwargs):
+        self._kwargs = {**kwargs}
+        self.distribution = {**kwargs}
 
-    def __call__(self, params, repr=None, scaling=False):  # Make flexible for calling with hooks or with only a tensor? __call__(self, params=None, module=None, in=None, out=None) Naming gets out of wack
-        self.perturb(params, repr, scaling)
+    def __call__(self, tensor: nn.Tensor):
+        if (self.distribution.probs == 0).all():
+            return tensor
+        if not self.freeze:
+            sample = self.distribution.sample(
+                sample_shape=tensor.size())
+            sample = self.handle_sample(sample, reduce=(sample.shape != tensor.shape))
+            assert tensor.shape == sample.shape, 'Sampled fault mask shape is not the same as tensor to perturb !'
+        else:
+            sample = self.saved_sample
+        if self.freeze and self.saved_sample is not None:
+            self.saved_sample = sample
 
-    def __str__(self):
-        return "Base class"
+        shape = tensor.shape
+        return self.perturb(tensor.flatten(), sample.flatten()).view(shape)
 
-    def __repr__(self):
-        return self.__str__
+    @abstractclassmethod
+    def handle_sample(self, sample: nn.Tensor, reduce: bool) -> nn.Tensor:
+        pass
 
-    def perturb(self, params, repr=None, scaling=False):
-        r"""
-        This function is the transformation that is applied to the data when
-        the perturbator is called in  __call__(self, params).
-        Should be overridden by all subclasses.
-        params should be the parameters that you wish to be modified, by
-        calling net.parameters()
+    @abstractclassmethod
+    def define_distribution(self, **kwargs) -> nn.Distribution:
+        pass
+
+    @abstractclassmethod
+    def perturb(self, tensor: nn.Tensor, mask: nn.Tensor) -> nn.Tensor:
+        r""" How do you apply the perturbation between the `tensor` and `mask`
         """
         pass
 
-    def set_probability(self, p=1):
-        self.p = p
+    @property
+    def distribution(self):
+        return self._distribution
 
-    def hook(self, module, inp, out):
-        return self.perturb(out)
+    @distribution.setter
+    def distribution(self, **kwargs):
+        self._distribution = self.define_distribution(**kwargs)
+        self.width = len(self.distribution._param)
+
+    def freeze_faults(self):
+        self.freeze = True
+
+    def unfreeze_faults(self):
+        self.freeze = False
+        if self.saved_sample is not None:
+            del self.saved_sample
 
     def to_json(self):
-        dict = {}
-        dict["name"] = self.__class__.__name__
-        dict["p"] = self.p
+        dict = {'name': type(self).__name__,
+                **self._kwargs}
         return dict
 
-
-class BitwisePert(Perturbator):
-    def __init__(self, p: float = 1.):
-        assert (p >= 0. and p <= 1.), "probability p must be between 0 and 1"
-        self.p = p
-
-    def __str__(self):
-        return "Bitwise Perturbation"
-
-    def __repr__(self):
-        return self.__str__()
-
-    def perturb(self, param: torch.tensor, repr: Optional[Perturbator] = None, scaling: Optional[str] = 'none'):
-        param_shape, param_mean = param.shape, torch.mean(torch.abs(param)).item()
-        param = param.flatten()
-        Cpp_Pert.perturb(param, self.p)
-        
-        # TODO remove commented block
-        #self.mask = self.generate_tensor_mask_bit(repr.width, param.shape[0])
-        #data = param.detach().cpu().numpy()
-        #for i, _ in enumerate(data):
-        #    data[i] = repr.convert_to_repr(data[i])
-        #data = data.astype('int')
-        #data = repr.apply_tensor_mask(data, self.mask)
-        #for i, value in enumerate(data):
-        #    param.data[i] = value
-
-        if scaling != 'none':
-            with torch.no_grad():
-                if scaling == 'he':
-                    he_scaling = math.sqrt(2./(np.prod(param_shape)))
-                    param *= he_scaling
-                elif scaling == 'mean':
-                    param *= param_mean
-                else:
-                    warnings.warn(f'Scaling is not one of {BINARY_SCALING}', UserWarning)
-        param = param.view(param_shape)
-
-    def generate_mask(self, width: int):
-        mask = np.zeros(8, dtype=int)
-        for i in range(1, width+1):
-            if (random.random() <= self.p):
-                mask[-i] = 1
-        return np.packbits(mask)[0]
-
-    def generate_tensor_mask_bit(self, width: int, tensor_length: int):
-        r""" Generate a fault mask the same size as `tensor_length` with precision `width``
-
-        Also set the attribute `effective_p` for bookeeping
-        """
-        mask = np.random.binomial(1, self.p, (width, tensor_length))
-        self.effective_p = np.count_nonzero(mask)/tensor_length
-        return np.packbits(mask, axis=0, bitorder='little')[0]
+class DigitalPerturbator(Perturbator):
+    repr_compatibility = ['DIGITAL']
+    def handle_sample(self, sample: nn.Tensor, reduce: bool) -> nn.Tensor:
+        if reduce:
+            sample.squeeze_(dim=-1) 
+            sample = reduce_uint(sample.to(torch.bool))
+        return sample.to(torch.uint8)
 
 
-class Zeros(Perturbator):
-    """
-    A 'Stuck-at-Zero' perturbation, regardless of representation
-    """
-    def __init__(self, p=1):
-        super(Zeros, self).__init__()
-        self.p = p
-
-    def __str__(self):
-        return "Zero Perturbation"
-
-    def __repr__(self):
-        return self.__str__()
-
-    def perturb(self, param, repr=None):
-        param_shape = param.shape
-        param = param.flatten()
-        for i, _ in enumerate(param.data):
-            if repr is not None:
-                param.data[i] = repr.convert_to_repr(param.data[i])
-            if (random.random() <= self.p):
-                param.data[i] = 0
-        param = param.view(param_shape)
+class AnalogPerturbator(Perturbator):
+    repr_compatibility = ['ANALOG']
+    def handle_sample(self, sample: nn.Tensor, reduce: bool) -> nn.Tensor:
+        if reduce:
+            raise ValueError('An analog perturbation should be 1d by definition, the sampled distribution does not follow this principle')
+        return sample
 
 
-class SignInvert(Perturbator):
-    """
-    Perturbation that inverts the sign of the input
-    """
-    def __init__(self, p=1):
-        super(SignInvert, self).__init__()
-        self.p = p
+class XORPerturbation(DigitalPerturbator):
+    def perturb(self, tensor: nn.Tensor, mask: nn.Tensor) -> nn.Tensor:
+        return torch.bitwise_xor(tensor, mask)
 
-    def __str__(self):
-        return "SignInvert Perturbation"
+class ANDPerturbation(DigitalPerturbator):
+    def perturb(self, tensor: nn.Tensor, mask: nn.Tensor) -> nn.Tensor:
+        return torch.bitwise_and(tensor, mask)
 
-    def __repr__(self):
-        return self.__str__()
+class ORPerturbation(DigitalPerturbator):
+    def perturb(self, tensor: nn.Tensor, mask: nn.Tensor) -> nn.Tensor:
+        return torch.bitwise_or(tensor, mask)
 
-    def perturb(self, param, repr=None):
-        param_shape = param.shape
-        param = param.flatten()
-        mask = np.random.binomial(1, self.p, (param.shape[0]))
-        data = param.detach().numpy()
-        for i, _ in enumerate(data):
-            data[i] = repr.convert_to_repr(data[i])
-        data = data.astype('int')
-        # mask = torch.ones_like(param)
-        # for i, _ in enumerate(mask):
-        #    if random.random() <= self.p:
-        #        mask[i] = 0
-        mask = mask*2 - 1
-        data *= mask
-        for i, value in enumerate(data):
-            param.data[i] = value
-        param = param.view(param_shape)
+class AdditiveNoisePerturbation(AnalogPerturbator):
+    def perturb(self, tensor: nn.Tensor, mask: nn.Tensor) -> nn.Tensor:
+        return tensor + mask
+
+class MultiplicativeNoisePerturbation(AnalogPerturbator):
+    def perturb(self, tensor: nn.Tensor, mask: nn.Tensor) -> nn.Tensor:
+        return tensor * mask
+
+@add_pert
+class BernoulliXORPerturbation(XORPerturbation):
+    def define_distribution(self, **kwargs) -> nn.Distribution:
+        return torch.distributions.bernoulli.Bernoulli(**kwargs)
 
 
-class Ones(Perturbator):
-    """
-    A 'Stuck-at-One' perturbation, regardless of representation
-    """
-    def __init__(self, p=1):
-        super(Ones, self).__init__()
-        self.p = p
-
-    def __str__(self):
-        return "Ones Perturb"
-
-    def perturb(self, params, repr=None):
-        param_shape = param.shape
-        param = param.flatten()
-        for i, _ in enumerate(param.data):
-            if (random.random() <= self.p):
-                param.data[i] = 1
-        param = param.view(param_shape)
-
-
-class Gauss(Perturbator):
-    """
-    Introduces gaussian noise into the inputs
-    """
-    def __init__(self, p=1, mu=0, sigma=1):
-        super(Gauss, self).__init__()
-        self.p = p
-        self.mu = mu
-        self.sigma = sigma
-
-    def __str__(self): # Add mean and std dev to print
-        return "Gaussian Perturb"
-
-    def perturb(self, params, repr=None):
-        param_shape = param.shape
-        param = param.flatten()
-        for i, _ in enumerate(param.data):
-            if (random.random() <= self.p):
-                param.data[i] += random.gauss(self.mu, self.sigma) * param.data[i]
-        param = param.view(param_shape)
-
-
-"""
-This dictionnary is used to construct perturbations from a JSON input
-"""
-PerturbatorDict = {
-    "BitwisePert": BitwisePert,
-    "Zeros": Zeros,
-    "SignInvert": SignInvert,
-    "Ones": Ones,
-    "Gauss": Gauss
-}
-
-
-def construct_pert(pert_dict):
-    """
-    Constructs a perturbation according to the dictionnary provided.
-    The dictionnary should have a field for 'name' equals to the name of the
-    class and a probability p.
+def construct_pert(pert_dict, user_pert = {}):
+    r"""
+    Constructs a representation according to the dictionnary provided.
+    The dictionnary should have a field for 'name' equals to the name of the class, the width of the repr
     """
     if pert_dict is None:
         return None
-    instance = PerturbatorDict[pert_dict['name']](p=pert_dict['p'])
-    return instance
+    all_pert = dict(PERT_DICT, **user_pert)
+    return all_pert[pert_dict.pop('name')](**pert_dict)
