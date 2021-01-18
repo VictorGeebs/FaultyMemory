@@ -119,7 +119,7 @@ class Handler(object):
         self.clusters.change_nb_clusters(handler_dict['nb_clusters'])
 
         # Represented tensors concat
-        tensors_dict = handler_dict['tensors']
+        tensors_dict = handler_dict['weights']['tensors']
         self.represented_ten += [construct_type(ten) for ten in tensors_dict]
 
         # Cluster assignement
@@ -144,14 +144,14 @@ class Handler(object):
         # Delegate perts to `Cluster` obj
         self.clusters.assign_perts(filtered_perts)
         self.clusters.cluster()
-                        
+
     def train(self) -> None:
         self.net.train()
-        
+
     def eval(self) -> None:
         self.net.eval()
 
-    def energy_consumption(self) -> Tuple(int, float):
+    def energy_consumption(self) -> Tuple[int, float]:
         r""" Return (max_consumption, current_consumption)
         TODO filter per tensor category ? e.g. parameters/activation have different sums
         """

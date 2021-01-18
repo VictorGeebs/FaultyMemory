@@ -1,4 +1,5 @@
 lib/tempCodeRunnerFile.py
+tests/tempCodeRunnerFile.py
 profiles/extra.txt
 .vscode/*
 .pytest_cache/*

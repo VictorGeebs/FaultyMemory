@@ -2,11 +2,6 @@ import torch
 import torch.nn as nn
 from abc import ABC, abstractclassmethod
 
-# TODO : perturbator : generer un tableau de taille du tenseur + 1 dimension ajoutée avec le sample booleen
-# géré en C : concaténer la dim +1 pour obtenir le masque de perturbation `reduce_uint`
-# géré en pytorch ou en c: xor, or, and
-# TODO : gérer différentes stratégies de perturbation: filterwise, ...
-
 # TODO: remove and cleanup 
 from torch.utils.cpp_extension import load
 Cpp_Pert = load(name="Cpp_Pert", sources=["FaultyMemory/cpp/perturbation.cpp"])
@@ -26,7 +21,7 @@ class Perturbator(ABC):
         self._kwargs = {**kwargs}
         self.distribution = {**kwargs}
 
-    def __call__(self, tensor: nn.Tensor):
+    def __call__(self, tensor: torch.Tensor):
         if (self.distribution.probs == 0).all():
             return tensor
         if not self.freeze:
@@ -43,15 +38,15 @@ class Perturbator(ABC):
         return self.perturb(tensor.flatten(), sample.flatten()).view(shape)
 
     @abstractclassmethod
-    def handle_sample(self, sample: nn.Tensor, reduce: bool) -> nn.Tensor:
+    def handle_sample(self, sample: torch.Tensor, reduce: bool) -> torch.Tensor:
         pass
 
     @abstractclassmethod
-    def define_distribution(self, **kwargs) -> nn.Distribution:
+    def define_distribution(self, **kwargs) -> torch.distributions:
         pass
 
     @abstractclassmethod
-    def perturb(self, tensor: nn.Tensor, mask: nn.Tensor) -> nn.Tensor:
+    def perturb(self, tensor: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
         r""" How do you apply the perturbation between the `tensor` and `mask`
         """
         pass
@@ -80,7 +75,7 @@ class Perturbator(ABC):
 
 class DigitalPerturbator(Perturbator):
     repr_compatibility = ['DIGITAL']
-    def handle_sample(self, sample: nn.Tensor, reduce: bool) -> nn.Tensor:
+    def handle_sample(self, sample: torch.Tensor, reduce: bool) -> torch.Tensor:
         if reduce:
             sample.squeeze_(dim=-1) 
             sample = reduce_uint(sample.to(torch.bool))
@@ -88,35 +83,35 @@ class DigitalPerturbator(Perturbator):
 
 class AnalogPerturbator(Perturbator):
     repr_compatibility = ['ANALOG']
-    def handle_sample(self, sample: nn.Tensor, reduce: bool) -> nn.Tensor:
+    def handle_sample(self, sample: torch.Tensor, reduce: bool) -> torch.Tensor:
         if reduce:
             raise ValueError('An analog perturbation should be 1d by definition, the sampled distribution does not follow this principle')
         return sample
 
 
 class XORPerturbation(DigitalPerturbator):
-    def perturb(self, tensor: nn.Tensor, mask: nn.Tensor) -> nn.Tensor:
+    def perturb(self, tensor: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
         return torch.bitwise_xor(tensor, mask)
 
 class ANDPerturbation(DigitalPerturbator):
-    def perturb(self, tensor: nn.Tensor, mask: nn.Tensor) -> nn.Tensor:
+    def perturb(self, tensor: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
         return torch.bitwise_and(tensor, mask)
 
 class ORPerturbation(DigitalPerturbator):
-    def perturb(self, tensor: nn.Tensor, mask: nn.Tensor) -> nn.Tensor:
+    def perturb(self, tensor: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
         return torch.bitwise_or(tensor, mask)
 
 class AdditiveNoisePerturbation(AnalogPerturbator):
-    def perturb(self, tensor: nn.Tensor, mask: nn.Tensor) -> nn.Tensor:
+    def perturb(self, tensor: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
         return tensor + mask
 
 class MultiplicativeNoisePerturbation(AnalogPerturbator):
-    def perturb(self, tensor: nn.Tensor, mask: nn.Tensor) -> nn.Tensor:
+    def perturb(self, tensor: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
         return tensor * mask
 
 @add_pert
 class BernoulliXORPerturbation(XORPerturbation):
-    def define_distribution(self, **kwargs) -> nn.Distribution:
+    def define_distribution(self, **kwargs) -> torch.distributions:
         return torch.distributions.bernoulli.Bernoulli(**kwargs)
 
 

@@ -197,7 +197,7 @@ def ten_exists(model_dict: dict, name: str) -> None:
         print(id)
         return
 
-def sanctify_ten(ten: nn.Tensor) -> nn.Tensor:
+def sanctify_ten(ten: torch.Tensor) -> torch.Tensor:
     r''' Take any tensor, make a deepcopy of it, and ensure the deepcopy is on CPU
 
     Note: `deepcopy` is needed in case the tensor is already on CPU, in which case `.cpu()` do not make a copy

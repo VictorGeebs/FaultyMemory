@@ -21,9 +21,9 @@ def perturb(ten: torch.tensor, repr_width, p):
     ten_repr = Cpp_Pert.generateTensorMask(ten, repr_width, p)
     ten_np = ten_repr.numpy()
 
-    packed = np.packbits(ten_np.astype(int), axis=-1, bitorder='little') # Packing bits in order to create the mask
+    packed = np.packbits(ten_np.astype(int), axis=-1, bitorder='little')  # Packing bits in order to create the mask
     ten_packed = torch.from_numpy(packed)
-    mask = torch.flatten(ten_packed, start_dim=-2) # Removing the extra dimension caused by the bit packing
+    mask = torch.flatten(ten_packed, start_dim=-2)  # Removing the extra dimension caused by the bit packing
 
     ten.data = torch.bitwise_xor(ten, mask).data
 

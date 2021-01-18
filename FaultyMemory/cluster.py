@@ -14,6 +14,7 @@ class Cluster(object):
         nb_clusters: number of clusters to reduce to (default 0 -> no clustering)
     """
     def __init__(self, nb_clusters: int = 0):
+        self.pert = None
         self.change_nb_clusters(nb_clusters)
 
     def __str__(self):
@@ -22,13 +23,13 @@ class Cluster(object):
             print(pert)
 
     def change_nb_clusters(self, nb_clusters: int = 0):
-        nb_clusters = sanitize_number(nb_clusters, min=0, rnd=True)
+        nb_clusters = sanitize_number(nb_clusters, mini=0, rnd=True)
         self.nb_clusters = nb_clusters
         if self.pert:
             self.de_cluster()
             self.cluster()
 
-    def assign_perts(self, perturbations: list[Perturbator]):
+    def assign_perts(self, perturbations: List[Perturbator]):
         self.pert = perturbations
         self.ref_params = torch.stack([pert.distribution._param.view(-1) for pert in self.pert])
 

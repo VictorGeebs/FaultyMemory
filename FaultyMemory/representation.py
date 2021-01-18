@@ -21,15 +21,15 @@ class Representation(ABC):
         return self.__COMPAT__ in other.repr_compatibility and self.width == other.width
 
     # @abstractclassmethod TODO
-    # def quantize(self, tensor: nn.Tensor) -> nn.Tensor:
+    # def quantize(self, tensor: torch.Tensor) -> torch.Tensor:
     #     pass
 
     @abstractclassmethod
-    def encode(self, tensor: nn.Tensor) -> nn.Tensor:
+    def encode(self, tensor: torch.Tensor) -> torch.Tensor:
         pass
 
     @abstractclassmethod
-    def decode(self, tensor: nn.Tensor) -> nn.Tensor:
+    def decode(self, tensor: torch.Tensor) -> torch.Tensor:
         pass
 
     def to_json(self):
@@ -45,7 +45,7 @@ class JustQuantize(Representation):
     r''' Subclass and define encode to an arbitrary representation
     Will not work with any repr ! (since we `JustQuantize`)
     '''
-    def decode(self, tensor: nn.Tensor) -> nn.Tensor:
+    def decode(self, tensor: torch.Tensor) -> torch.Tensor:
         return tensor
     
 
@@ -57,10 +57,10 @@ class AnalogRepresentation(Representation):
         '''
         super.__init__(width=1) # width is 1 in this case, each value of the tensor is a 1d float
 
-    def encode(self, tensor: nn.Tensor) -> nn.Tensor:
+    def encode(self, tensor: torch.Tensor) -> torch.Tensor:
         return tensor
 
-    def decode(self, tensor: nn.Tensor) -> nn.Tensor:
+    def decode(self, tensor: torch.Tensor) -> torch.Tensor:
         return tensor
 
 
@@ -74,11 +74,11 @@ class BinaryRepresentation(DigitalRepresentation):
     def __init__(self) -> None:
         super().__init__(width=1)
 
-    def encode(self, tensor: nn.Tensor) -> nn.Tensor:
+    def encode(self, tensor: torch.Tensor) -> torch.Tensor:
         tensor = torch.sign(tensor) + 2 - 1
         return tensor.to(torch.uint8)
 
-    def decode(self, tensor: nn.Tensor) -> nn.Tensor:
+    def decode(self, tensor: torch.Tensor) -> torch.Tensor:
         return (tensor * 2) - 1
 
 
@@ -87,12 +87,12 @@ class ScaledBinaryRepresentation(DigitalRepresentation):
     def __init__(self) -> None:
         super().__init__(width=1)
 
-    def encode(self, tensor: nn.Tensor) -> nn.Tensor:
+    def encode(self, tensor: torch.Tensor) -> torch.Tensor:
         self.mean = torch.mean(torch.abs(tensor))
         tensor = torch.sign(tensor) + 2 - 1
         return tensor.to(torch.uint8)
 
-    def decode(self, tensor: nn.Tensor) -> nn.Tensor:
+    def decode(self, tensor: torch.Tensor) -> torch.Tensor:
         return ((tensor * 2) - 1) * self.mean
 
 
@@ -104,14 +104,14 @@ class ClusteredRepresentation(DigitalRepresentation):
             Warning.warn('Number of cluster not fully using all bits, rounding up to the nearest power of 2 (max=8)')
         super().__init__(width=min(np.log(next)/np.log(2), 8))
 
-    def encode(self, tensor: nn.Tensor) -> nn.Tensor:
+    def encode(self, tensor: torch.Tensor) -> torch.Tensor:
         from scipy.cluster.vq import vq, kmeans, whiten
         whitened = whiten(tensor.clone().cpu().numpy().flatten())
         self.codebook, _ = kmeans(whitened, 2 ** self.width)
         cluster, _ = vq(whitened, self.codebook)
         return torch.tensor(cluster).view(tensor.shape).to(torch.uint8)
 
-    def decode(self, tensor: nn.Tensor) -> nn.Tensor:
+    def decode(self, tensor: torch.Tensor) -> torch.Tensor:
         shape = tensor.shape
         tensor = tensor.flatten()
         tensor = torch.gather(torch.from_numpy(self.codebook), 0, tensor)

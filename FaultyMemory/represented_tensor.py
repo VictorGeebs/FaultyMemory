@@ -3,6 +3,7 @@ from FaultyMemory.perturbator import Perturbator, construct_pert
 from typing import Dict, Optional, Tuple, Union
 from FaultyMemory.representation import Representation, construct_repr
 import numpy as np
+import torch
 import torch.nn as nn
 from abc import ABC, abstractclassmethod
 
@@ -37,7 +38,7 @@ class RepresentedTensor(ABC):
         perturbed = self.apply_perturb_to_encoded(encoded)
         return self.repr.decode(perturbed).to(x.dtype)
 
-    def apply_perturb_to_encoded(self, base) -> nn.Tensor:
+    def apply_perturb_to_encoded(self, base) -> torch.Tensor:
         # TODO : si pert == 0, just quantize
         for pert in self.pert:
             if not pert:
@@ -74,7 +75,7 @@ class RepresentedTensor(ABC):
         '''
         pass
 
-    def energy_consumption(self, a=12.8) -> Tuple(int, float):
+    def energy_consumption(self, a=12.8) -> Tuple[int, float]:
         assert self.bitcount is not None, 'Bitcount has not been set in `compute_bitcount`'
         if 'BitwisePert' in self.pert:
             p = self.pert['BitwisePert'].distribution.probs.cpu().numpy()

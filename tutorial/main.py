@@ -8,16 +8,9 @@ import wrn_mcdonnell_manual as McDo
 import Dropit
 from collections import OrderedDict
 
-from tests.test_representation import test_binary_faults
-
 from torch.utils.cpp_extension import load
 
 Cpp_Pert = load(name="Cpp_Pert", sources=["FaultyMemory/cpp/perturbation.cpp"])
-
-
-test_binary_faults()
-
-exit()
 
 class SimpleNet(nn.Module):
     def __init__(self):
@@ -31,7 +24,6 @@ class SimpleNet(nn.Module):
         x = self.fc2(x)
         x = self.fc3(x)
         return x
-
 
 class SimpleConv(nn.Module):
     def __init__(self):
@@ -57,24 +49,16 @@ class SimpleConv(nn.Module):
 net = McDo.WRN_McDonnell(depth=28, width=10, num_classes=10, dropit=False, actprec=3)
 # net = SimpleNet()
 
-
-nb_clusters = 4
-cluster_list = [C.Cluster() for _ in range(nb_clusters)]
-print(cluster_list)
-handler = H.Handler(net, cluster_list)
+handler = H.Handler(net)
 
 handler.from_json('./profiles/McDo.json')
 
-handler.assign_clusters()
 # handler.to_json('./profiles/saved_handler.json')
-exit()
+#print("Perturbed net: ", dict(handler.net.named_parameters())['conv_last.weight'])
+handler.perturb_tensors()
 
-inp = torch.tensor([1.])
-out = handler(inp)
-
-print(handler)
-
-print('out: ', out)
+print("Saved net: ", dict(handler.saved_net.named_parameters())['conv_last.weight'])
+print("Perturbed net: ", dict(handler.net.named_parameters())['conv_last.weight'])
 
 
 """
