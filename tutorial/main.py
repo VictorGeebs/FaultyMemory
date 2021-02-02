@@ -3,6 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import FaultyMemory.cluster as C
 import FaultyMemory.handler as H
+import FaultyMemory.perturbator as P
+import FaultyMemory.representation as R
 
 import wrn_mcdonnell_manual as McDo
 import Dropit
@@ -46,20 +48,25 @@ class SimpleConv(nn.Module):
         return x
 
 
-net = McDo.WRN_McDonnell(depth=28, width=10, num_classes=10, dropit=False, actprec=3)
-# net = SimpleNet()
+#net = McDo.WRN_McDonnell(depth=28, width=10, num_classes=10, dropit=False, actprec=3)
+net = SimpleNet()
+
+print(list(net.named_parameters()))
 
 handler = H.Handler(net)
 
-handler.from_json('./profiles/McDo.json')
+pert = P.BernoulliXORPerturbation(probs=0.5)
+repr = R.BinaryRepresentation()
 
-# handler.to_json('./profiles/saved_handler.json')
+#handler.add_net_parameters(representation=repr, perturb=pert)
+
+handler.from_json('./profiles/saved_handler.json')
+
+handler.to_json('./profiles/saved_handler.json')
 #print("Perturbed net: ", dict(handler.net.named_parameters())['conv_last.weight'])
 handler.perturb_tensors()
 
-print("Saved net: ", dict(handler.saved_net.named_parameters())['conv_last.weight'])
-print("Perturbed net: ", dict(handler.net.named_parameters())['conv_last.weight'])
-
+print(list(net.named_parameters()))
 
 """
 def confint_mean_testset():

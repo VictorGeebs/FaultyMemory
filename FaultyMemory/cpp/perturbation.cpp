@@ -44,7 +44,8 @@ std::uint8_t generateRandomBitArray(const std::size_t width, const float p)
     return perturbMask;
 }
 
-at::Tensor generateTensorMask(const torch::Tensor& ten, const std::size_t width, const float p)
+// TODO not uniform distribution
+at::Tensor generateTensorMask(const torch::Tensor& ten, std::size_t width, float p)
 {
     std::vector<int64_t> shape_vec;
     int length = ten.sizes().size();

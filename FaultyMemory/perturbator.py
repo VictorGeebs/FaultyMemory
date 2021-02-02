@@ -6,6 +6,8 @@ from abc import ABC, abstractclassmethod
 from torch.utils.cpp_extension import load
 Cpp_Pert = load(name="Cpp_Pert", sources=["FaultyMemory/cpp/perturbation.cpp"])
 
+BITRANK = torch.tensor([1, 2, 4, 8, 16, 32, 64, 128])
+
 PERT_DICT = {}
 def add_pert(func):
     PERT_DICT[func.__name__] = func
@@ -19,7 +21,8 @@ class Perturbator(ABC):
     repr_compatibility = []
     def __init__(self, **kwargs):
         self._kwargs = {**kwargs}
-        self.distribution = {**kwargs}
+        self.distribution = kwargs
+        self.freeze = False
 
     def __call__(self, tensor: torch.Tensor):
         if (self.distribution.probs == 0).all():
@@ -42,7 +45,7 @@ class Perturbator(ABC):
         pass
 
     @abstractclassmethod
-    def define_distribution(self, **kwargs) -> torch.distributions:
+    def define_distribution(self, kwargs) -> torch.distributions:
         pass
 
     @abstractclassmethod
@@ -56,9 +59,12 @@ class Perturbator(ABC):
         return self._distribution
 
     @distribution.setter
-    def distribution(self, **kwargs):
-        self._distribution = self.define_distribution(**kwargs)
-        self.width = len(self.distribution._param)
+    def distribution(self, kwargs):
+        self._distribution = self.define_distribution(kwargs)
+        if self.distribution._param.dim() == 0:  # 0-dim tensor (scalar)
+            self.width = 1
+        else:
+            self.width = len(self.distribution._param)
 
     def freeze_faults(self):
         self.freeze = True
@@ -78,7 +84,7 @@ class DigitalPerturbator(Perturbator):
     def handle_sample(self, sample: torch.Tensor, reduce: bool) -> torch.Tensor:
         if reduce:
             sample.squeeze_(dim=-1) 
-            sample = reduce_uint(sample.to(torch.bool))
+            sample = torch.sum(sample.to(torch.bool) * BITRANK[:sample.shape[-1]], dim=-1)
         return sample.to(torch.uint8)
 
 class AnalogPerturbator(Perturbator):
@@ -111,7 +117,7 @@ class MultiplicativeNoisePerturbation(AnalogPerturbator):
 
 @add_pert
 class BernoulliXORPerturbation(XORPerturbation):
-    def define_distribution(self, **kwargs) -> torch.distributions:
+    def define_distribution(self, kwargs) -> torch.distributions:
         return torch.distributions.bernoulli.Bernoulli(**kwargs)
 
 

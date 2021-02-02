@@ -81,7 +81,7 @@ def train_net(net, optimizer, criterion, trainloader, nb_epochs, prt=True):
     """
     for epoch in range(nb_epochs):
         running_loss = 0.0
-        for i, data in enumerate(trainloader, 0):
+        for i, data in enumerate(tqdm(trainloader)):
 
             inputs, labels = data
 

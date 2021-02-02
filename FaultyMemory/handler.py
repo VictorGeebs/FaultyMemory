@@ -17,7 +17,7 @@ class Handler(object):
 
     def __init__(self, net, clusters=None):
         self.net = net
-        self.represented_ten = []
+        self.represented_ten = {}
 
         self.clusters = Cluster()
 
@@ -44,7 +44,7 @@ class Handler(object):
         return out
 
     def perturb_tensors(self):
-        [represented_ten.quantize_perturb() for represented_ten in self.represented_ten]
+        [represented_ten.quantize_perturb() for _, represented_ten in self.represented_ten.items()]
 
     def restore(self):
         [represented_ten.restore() for represented_ten in self.represented_ten]
@@ -82,7 +82,7 @@ class Handler(object):
     def add_net_parameters(self, 
                            representation: Representation, 
                            perturb: Optional[Union[Dict, Perturbator]] = None):
-        [self.add_tensor(param_key, representation, perturb) for param_key, _ in self.net.named_parameters()]
+        [self.add_parameter(param_key, representation, perturb) for param_key, _ in self.net.named_parameters()]
 
     def remove_net_parameters(self):
         [self.remove_tensor(param_key) for param_key, _ in self.net.named_parameters()]
@@ -119,8 +119,9 @@ class Handler(object):
         self.clusters.change_nb_clusters(handler_dict['nb_clusters'])
 
         # Represented tensors concat
-        tensors_dict = handler_dict['weights']['tensors']
-        self.represented_ten += [construct_type(ten) for ten in tensors_dict]
+        tensors_list = handler_dict['tensors']
+        
+        self.represented_ten = {**self.represented_ten, **{ten["name"]: construct_type(self.net, ten) for ten in tensors_list}}
 
         # Cluster assignement
         self.assign_clusters() #TODO read and pass arg `clustering_criterion`
@@ -128,7 +129,7 @@ class Handler(object):
     def to_dict(self):
         handler_dict = {
             "nb_clusters": self.clusters.nb_clusters,
-            "tensors": [tensor.to_json() for tensor in self.represented_ten]
+            "tensors": [tensor.to_json() for _, tensor in self.represented_ten.items()]
         }
         return handler_dict
 
@@ -138,7 +139,7 @@ class Handler(object):
         perturbations to group them in the handler's clusters.
         Currently only supports Bitwise Perturbations
         """
-        filtered_perts = [ten.pert[clustering_criterion] for ten in self.represented_ten if clustering_criterion in ten.pert]
+        filtered_perts = [ten.pert[clustering_criterion] for ten in self.represented_ten.values() if clustering_criterion in ten.pert]
         assert len(filtered_perts) > 0, f'Trying to cluster with {clustering_criterion} yield 0 represented_tensor'
 
         # Delegate perts to `Cluster` obj

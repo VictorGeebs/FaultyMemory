@@ -23,7 +23,7 @@ import torchvision.transforms as transforms
 import torchvision
 import torch
 
-torch.cuda.set_device(3)
+torch.cuda.device(3)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 PATH = './models/mcdonnell.pth'

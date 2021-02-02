@@ -20,6 +20,7 @@ class RepresentedTensor(ABC):
         self.model = model
         ten_exists(self.where_ten(), name)
         self.compute_bitcount()
+        self.saved_ten = None
 
     @classmethod
     def from_dict(cls, dict: dict, model: nn.Module):
@@ -40,7 +41,7 @@ class RepresentedTensor(ABC):
 
     def apply_perturb_to_encoded(self, base) -> torch.Tensor:
         # TODO : si pert == 0, just quantize
-        for pert in self.pert:
+        for _, pert in self.pert.items():
             if not pert:
                 continue
             assert self.repr.compatibility(pert), 'The perturbation is not compatible with the representation'
@@ -77,10 +78,10 @@ class RepresentedTensor(ABC):
 
     def energy_consumption(self, a=12.8) -> Tuple[int, float]:
         assert self.bitcount is not None, 'Bitcount has not been set in `compute_bitcount`'
-        if 'BitwisePert' in self.pert:
-            p = self.pert['BitwisePert'].distribution.probs.cpu().numpy()
+        if 'BernoulliXORPerturbation' in self.pert:
+            p = self.pert['BernoulliXORPerturbation'].distribution.probs.cpu().numpy()
         else:
-            print('There are no consumption model other than for Bitwise pert yet')
+            print('There are no consumption model other than for BernoulliXORPerturbation yet')
             p = 0.
         current_consumption = -np.log(p/a) if p > 0 else 1.
         return self.bitcount, self.bitcount * current_consumption
@@ -89,7 +90,7 @@ class RepresentedTensor(ABC):
         return {'type': type(self).__name__,
                 'name': self.name,
                 'repr': self.repr.to_json(),
-                'pert': [pert.to_json() for pert in self.pert]}
+                'pert': [pert.to_json() for _, pert in self.pert.items()]}
 
 
 @add_type
@@ -100,7 +101,7 @@ class RepresentedParameter(RepresentedTensor):
         self.bitcount = self.access_ten().numel() * self.repr.width
 
     def where_ten(self) -> dict:
-        return self.model.named_parameters()
+        return dict(self.model.named_parameters())
 
     def quantize_perturb(self) -> None:
         ten = self.access_ten()

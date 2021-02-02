@@ -47,7 +47,7 @@ class JustQuantize(Representation):
     '''
     def decode(self, tensor: torch.Tensor) -> torch.Tensor:
         return tensor
-    
+
 
 @add_repr
 class AnalogRepresentation(Representation):
@@ -71,15 +71,15 @@ class DigitalRepresentation(Representation):
 
 @add_repr
 class BinaryRepresentation(DigitalRepresentation):
-    def __init__(self) -> None:
+    def __init__(self, **kwargs) -> None:
         super().__init__(width=1)
 
     def encode(self, tensor: torch.Tensor) -> torch.Tensor:
-        tensor = torch.sign(tensor) + 2 - 1
+        tensor = (torch.sign(tensor) + 1) / 2 
         return tensor.to(torch.uint8)
 
     def decode(self, tensor: torch.Tensor) -> torch.Tensor:
-        return (tensor * 2) - 1
+        return (tensor.to(torch.float32) * 2) - 1
 
 
 @add_repr

@@ -14,7 +14,7 @@ class Cluster(object):
         nb_clusters: number of clusters to reduce to (default 0 -> no clustering)
     """
     def __init__(self, nb_clusters: int = 0):
-        self.pert = None
+        self.pert = None # TODO assign_perts here
         self.change_nb_clusters(nb_clusters)
 
     def __str__(self):
