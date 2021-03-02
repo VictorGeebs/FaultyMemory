@@ -2,9 +2,10 @@ import json
 
 from FaultyMemory.cluster import Cluster
 from FaultyMemory.perturbator import Perturbator
-from FaultyMemory.representation import Representation
+from FaultyMemory.representation import Representation, FixedPointRepresentation
 from FaultyMemory.represented_tensor import RepresentedParameter, RepresentedActivation, construct_type
 from FaultyMemory.utils import ten_exists
+import copy
 
 from typing import Tuple, Union, Optional, Dict
 
@@ -47,7 +48,47 @@ class Handler(object):
         [represented_ten.quantize_perturb() for _, represented_ten in self.represented_ten.items()]
 
     def restore(self):
-        [represented_ten.restore() for represented_ten in self.represented_ten]
+        [represented_ten.restore() for _, represented_ten in self.represented_ten.items()]
+
+    def compute_MSE(self):
+        return [represented_ten.quantize_MSE() for _, represented_ten in self.represented_ten.items()]
+
+    def value_range(self):
+        return [represented_ten.value_range() for _, represented_ten in self.represented_ten.items()]
+
+    def assign_representation_range(self):
+        old_prec_list = []
+        old_width_list = []
+        old_whole_list = []
+        
+        prec_list = []
+        width_list = []
+        whole_list = []
+        for name, represented_ten in self.represented_ten.items():
+            
+            old_prec_list.append(represented_ten.repr.nb_digits)
+            old_width_list.append(represented_ten.repr.width)
+            old_whole_list.append(represented_ten.repr.width - represented_ten.repr.nb_digits)
+            
+            whole = represented_ten.compute_precision()
+
+            assert isinstance(represented_ten.repr, FixedPointRepresentation)
+            precision = represented_ten.repr.width - whole
+            
+            assert precision >= 0
+
+            prec_list.append(precision)
+            width_list.append(represented_ten.repr.width)
+            whole_list.append(whole)
+
+            represented_ten.repr.nb_digits = precision
+            
+        print("old_prec: ", old_prec_list)
+        print("old_width: ", old_width_list)
+        print("old_whole: ", old_whole_list)
+        print(prec_list)
+        print(width_list)
+        print(whole_list)
 
     def add_parameter(self, 
                    name: str, 

@@ -6,6 +6,9 @@ import numpy as np
 import torch
 import torch.nn as nn
 from abc import ABC, abstractclassmethod
+import math
+
+import copy
 
 TYPE_DICT = {}
 def add_type(func):
@@ -15,7 +18,7 @@ def add_type(func):
 class RepresentedTensor(ABC):
     def __init__(self, model: nn.Module, name: str, repr: Representation, pert: Optional[Union[Dict, Perturbator]] = {}) -> None:
         self.name = name
-        self.repr = repr
+        self.repr = copy.deepcopy(repr)
         self.pert = dictify(pert)
         self.model = model
         ten_exists(self.where_ten(), name)
@@ -24,7 +27,7 @@ class RepresentedTensor(ABC):
 
     @classmethod
     def from_dict(cls, dict: dict, model: nn.Module):
-        return cls(model, 
+        return cls(model,
                    dict['name'],
                    construct_repr(dict['repr']),
                    {pert['name']: construct_pert(pert) for pert in dict['pert']})
@@ -65,6 +68,7 @@ class RepresentedTensor(ABC):
         if self.saved_ten is not None:
             self.ref_ten.data.copy_(self.saved_ten.data.to(self.ref_ten))
             del self.saved_ten
+            self.saved_ten = None
 
     @abstractclassmethod
     def where_ten(self) -> dict: 
@@ -85,6 +89,17 @@ class RepresentedTensor(ABC):
             p = 0.
         current_consumption = -np.log(p/a) if p > 0 else 1.
         return self.bitcount, self.bitcount * current_consumption
+
+    @abstractclassmethod
+    def quantize_MSE(self) -> float:
+        r''' Computes the Mean Squared Error between an original tensor and its quantized version
+        '''
+        pass
+
+    def value_range(self):
+        r''' Computes the range of values in the tensor to allow for smart representation assignation
+        '''
+        pass
 
     def to_json(self):
         return {'type': type(self).__name__,
@@ -108,6 +123,26 @@ class RepresentedParameter(RepresentedTensor):
         self.save(ten)
         ten_prime = self.to_repr(ten)
         ten.data.copy_(ten_prime.data)
+
+    def quantize_MSE(self) -> float:
+        ten = self.access_ten()
+        ten_prime = self.to_repr(ten)
+        loss = nn.MSELoss()
+        return float(loss(ten_prime, ten))
+
+    def value_range(self):
+        ten = self.access_ten()
+        max = torch.max(ten)
+        min = torch.min(ten)
+        return (float(min), float(max))
+
+    def compute_precision(self):
+        mini, maxi = self.value_range()
+        greatest = max(-mini, maxi)
+        whole_part = max(math.ceil(math.log(2*greatest, 2)), 0)
+
+        return whole_part
+
 
 
 @add_type

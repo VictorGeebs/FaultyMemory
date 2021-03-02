@@ -190,9 +190,10 @@ std::uint8_t encodeFixedPoint(const float var, const std::size_t width, const st
 {
     float precision = 1.0 / (1u << nbDigits); // Smallest increment with the set number of bits
     std::size_t wholeWidth = width - nbDigits; // width of the whole part of the number (int(var))
-    
-    int maxInt = 1u << (wholeWidth-1); // Max value possible of the whole part with the number of bits specified, assuming signed notation
-    float clamped = customFunc::clamp(var, -1*maxInt, maxInt - precision); // Clamping variable to calculated values
+
+    int maxInt = 1u << (wholeWidth); // Max value possible of the whole part with the number of bits specified, assuming unsigned notation
+    float maxVal = maxInt/2; // Max value possible of the whole part with the number of bits specified, assuming signed notation
+    float clamped = customFunc::clamp(var, -1*maxVal, maxVal - precision); // Clamping variable to calculated values
 
     clamped *= 1u << nbDigits;
     clamped = std::round(clamped);
@@ -203,9 +204,14 @@ torch::Tensor encodeTenFixedPoint(const torch::Tensor& ten, const std::size_t wi
 {
     float precision = 1.0 / (1u << nbDigits); // Smallest increment with the set number of bits
     std::size_t wholeWidth = width - nbDigits; // width of the whole part of the number (int(var))
-    
-    int maxInt = 1u << (wholeWidth-1); // Max value possible of the whole part with the number of bits specified, assuming signed notation
-    torch::Tensor clamped = ten.clamp(-1*maxInt, maxInt - precision); // Clamping tensor variable to calculated values
+
+    int maxInt = 1u << (wholeWidth); // Max value possible of the whole part with the number of bits specified, assuming unsigned notation
+    float maxVal = maxInt/2.f; // Max value possible of the whole part with the number of bits specified, assuming signed notation
+    torch::Tensor clamped = ten.clamp(-maxVal, maxVal - precision); // Clamping tensor variable to calculated values
+
+    //std::cerr << precision << '\n';
+    //std::cerr << maxVal << '\n';
+    //std::cerr << maxInt << '\n';
 
     unsigned int scale = 1 << nbDigits;
     clamped = clamped * static_cast<int>(scale);
@@ -226,7 +232,6 @@ torch::Tensor decodeTenFixedPoint(const torch::Tensor& ten, const std::size_t wi
     float precision = 1.0 / (1u << nbDigits);
     return precision*intTen;
 }
-
 
 // Quantize
 float quantizeFixedPoint(float var, const std::size_t width, const std::size_t nbDigits)
@@ -259,6 +264,8 @@ torch::Tensor quantizeTenFixedPoint(const torch::Tensor ten, const std::size_t w
     return clamped /= f;
 }
 
+
+// Binding
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
     m.def("encodeBinary", &encodeBinary, "CPPperturb");
     m.def("encodeTenBinary", &encodeTenBinary, "CPPperturb");

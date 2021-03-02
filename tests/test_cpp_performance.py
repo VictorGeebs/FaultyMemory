@@ -49,18 +49,22 @@ out = perturb(ten_raw, width, p)
 
 #--------------Encode - Decode Tests------------------
 
-# vec = [x/5 for x in range(-5,5)]
-# ten_raw = torch.FloatTensor(vec)
-# isSigned = True
-# width = 5
-# nbDigits = 3
-# encoded = Cpp_Repr.encodeTenFixedPoint(ten_raw, width, nbDigits)
-# decoded = Cpp_Repr.decodeTenFixedPoint(encoded, width, nbDigits)
-# quantized = Cpp_Repr.quantizeTenFixedPoint(ten_raw, width, nbDigits)
-# print(ten_raw)
-# print(encoded)
-# print(decoded)
-# print(quantized)
+vec = [x/5 for x in range(-5,5)]
+ten_raw = torch.FloatTensor(vec)
+isSigned = True
+width = 8
+nbDigits = 8
+#encoded = Cpp_Repr.encodeTenFixedPoint(ten_raw, width, nbDigits)
+vec = [x for x in range(256)]
+encoded = torch.FloatTensor(vec)
+decoded = Cpp_Repr.decodeTenFixedPoint(encoded, width, nbDigits)
+quantized = Cpp_Repr.quantizeTenFixedPoint(ten_raw, width, nbDigits)
+#print(ten_raw)
+#print(encoded)
+#print(decoded)
+print("min: ", min(decoded))
+print("max: ", max(decoded))
+#print(quantized)
 
 
 # vec = [x/2 for x in range(-30, 30)]

@@ -3,6 +3,8 @@ import torch
 import torch.nn as nn
 from FaultyMemory.perturbator import Perturbator
 from abc import ABC, abstractclassmethod
+from torch.utils.cpp_extension import load
+Cpp_Repr = load(name="Cpp_Repr", sources=["FaultyMemory/cpp/representation.cpp"])
 
 REPR_DICT = {}
 def add_repr(func):
@@ -55,7 +57,7 @@ class AnalogRepresentation(Representation):
     def __init__(self) -> None:
         r''' A special case representation for e.g. memristors perturbations
         '''
-        super.__init__(width=1) # width is 1 in this case, each value of the tensor is a 1d float
+        super().__init__(width=1) # width is 1 in this case, each value of the tensor is a 1d float
 
     def encode(self, tensor: torch.Tensor) -> torch.Tensor:
         return tensor
@@ -95,6 +97,18 @@ class ScaledBinaryRepresentation(DigitalRepresentation):
     def decode(self, tensor: torch.Tensor) -> torch.Tensor:
         return ((tensor * 2) - 1) * self.mean
 
+
+@add_repr
+class FixedPointRepresentation(DigitalRepresentation):
+    def __init__(self, width=1, nb_digits=1) -> None:
+        super().__init__(width)
+        self.nb_digits = nb_digits
+
+    def encode(self, tensor: torch.Tensor) -> torch.Tensor:
+        return Cpp_Repr.encodeTenFixedPoint(tensor, self.width, self.nb_digits)
+
+    def decode(self, tensor: torch.Tensor) -> torch.Tensor:
+        return Cpp_Repr.decodeTenFixedPoint(tensor, self.width, self.nb_digits)
 
 @add_repr
 class ClusteredRepresentation(DigitalRepresentation):
