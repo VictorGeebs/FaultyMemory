@@ -192,7 +192,7 @@ class RepresentedTensor(ABC):
                 torch.max(output).item(), self.tensor_stats.get('MAX', float('-inf')))
             self.tensor_stats['MIN'] = min(
                 torch.min(output).item(), self.tensor_stats.get('MIN', float('inf')))
-        self.access_ten_before(func, name='DynamicValueRange')
+        self.access_ten_before(func, name='ValueRange')
 
     def adjust_fixed_point(self) -> None:
         r''' Adjust the representation parameters to the tensor statistics
