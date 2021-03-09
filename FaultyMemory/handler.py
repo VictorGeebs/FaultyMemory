@@ -1,5 +1,7 @@
 import json
 
+from tabulate import tabulate
+
 from FaultyMemory.cluster import Cluster
 from FaultyMemory.perturbator import Perturbator
 from FaultyMemory.representation import Representation, FixedPointRepresentation
@@ -7,7 +9,7 @@ from FaultyMemory.represented_tensor import RepresentedParameter, RepresentedAct
 from FaultyMemory.utils import ten_exists
 import copy
 
-from typing import Tuple, Union, Optional, Dict
+from typing import List, Tuple, Union, Optional, Dict
 
 
 class Handler(object):
@@ -19,7 +21,6 @@ class Handler(object):
     def __init__(self, net, clusters=None):
         self.net = net
         self.represented_ten = {}
-
         self.clusters = Cluster()
 
     def __str__(self):
@@ -39,25 +40,77 @@ class Handler(object):
         Args:
             x: Input to process
         """
-        self.perturb_tensors() #FIXME not useful to call every time
+        self.perturb_tensors()
         out = self.net.forward(x)
         self.restore()
         return out
 
-    def perturb_tensors(self):
+    def perturb_tensors(self) -> None:
         [represented_ten.quantize_perturb() for _, represented_ten in self.represented_ten.items()]
 
-    def restore(self):
-        [represented_ten.restore() for _, represented_ten in self.represented_ten.items()]
+    def restore(self, purge:bool=True) -> None:
+        [represented_ten.restore(purge) for _, represented_ten in self.represented_ten.items()]
 
-    def compute_MSE(self):
+    def compute_MSE(self) -> None:
         [represented_ten.quantize_MSE() for _, represented_ten in self.represented_ten.items()]
+
+    def get_stat(self, stat:str) -> list:
+        return [represented_ten.tensor_stats[stat] for represented_ten in self.represented_ten.values()]
+
+    def get_names(self) -> list:
+        return [represented_ten.name for represented_ten in self.represented_ten.values()]
+
+    def apply(self, func):
+        [func(represented_ten) for represented_ten in self.represented_ten.values()]
+
+    def compute_comparative_MSE(self, data):
+        r''' Compute the MSE with respect to the non-quantized and non-perturbed network for the input tensor `data`
+        '''
+        headers=['Name', 'Ref (==0)', 'Quantized', 'Quantized_perturbed']
+        # Remove quantize_perturb from callbacks if here
+        self.apply(lambda repr_ten: repr_ten.detach_callback('quantize_perturb'))
+        # First pass: MSE cb, for restore purge=False
+        self.apply(lambda repr_ten: repr_ten.quantize_MSE())
+        self.apply(lambda repr_ten: repr_ten.default_exec_callback_stack()) # needed for params
+        self.net.forward(data)
+        ref = self.get_stat('MSE')
+        self.restore(purge=False)
+
+        # Second pass: add quantize_perturb, for restore purge=False
+        self.apply(lambda repr_ten: repr_ten.off_perturbs())
+        self.perturb_tensors()
+        self.apply(lambda repr_ten: repr_ten.default_exec_callback_stack()) # needed for params
+        self.net.forward(data)
+        quant = self.get_stat('MSE')
+        self.restore(purge=False)
+
+        # Third pass: activate perturbs, for restore purge=True
+        self.apply(lambda repr_ten: repr_ten.on_perturbs())
+        self.apply(lambda repr_ten: repr_ten.default_exec_callback_stack()) # needed for params
+        self.net.forward(data)
+        pert = self.get_stat('MSE')
+        self.restore(purge=True)
+
+        # Pretty print results
+        tabulate(zip(self.get_names(), ref, quant, pert), headers)
 
     def value_range(self):
         [represented_ten.value_range() for _, represented_ten in self.represented_ten.items()]
 
     def assign_representation_range(self):
         [represented_ten.adjust_fixed_point() for _, represented_ten in self.represented_ten.items()]
+
+    def dnn_wizard(self):
+        r''' Parse a neural network and cast it to a best bet quantization + perturbation
+        '''
+        # 1 - Fusion known linearities
+
+        # 2 - Cast fused/unfused parameters/acts to represented tensors
+
+        # 2a - Pick repr
+
+        # 2b - Pick pert
+        pass
 
     def add_parameter(self, 
                    name: str, 

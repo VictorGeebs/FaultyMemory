@@ -1,6 +1,6 @@
 from FaultyMemory.utils import dictify, ten_exists, sanctify_ten
 from FaultyMemory.perturbator import Perturbator, construct_pert
-from typing import Callable, Dict, Optional, Tuple, Union
+from typing import Callable, Optional, Tuple, Union
 from FaultyMemory.representation import FixedPointRepresentation, Representation, construct_repr
 from tabulate import tabulate
 import numpy as np
@@ -20,8 +20,9 @@ class RepresentedTensor(ABC):
     Works through a callback system, functions in the dict callbacks are stored as dict('priority', 'func')
     Priority ordering the execution from -inf to 0 (quantized) to inf
     '''
-    def __init__(self, model: nn.Module, name: str, repr: Representation, pert: Optional[Union[Dict, Perturbator]] = {}) -> None:
+    def __init__(self, model: nn.Module, name: str, repr: Representation, pert: Optional[Union[dict, Perturbator]] = {}) -> None:
         self.name = name
+        self._perturb = True
         self.repr = copy.deepcopy(repr)
         self.pert = dictify(pert)
         self.model = model
@@ -33,9 +34,9 @@ class RepresentedTensor(ABC):
 
     def __str__(self) -> str:
         string = f'{self.repr} tensor \n'
-        string += tabulate(self.pert, ['Perturbation type', 'Params.'])
+        string += tabulate(self.pert, ['Perturbation type', 'Params.'], tablefmt="github")
         string += tabulate(self.tensor_stats, ['Stat.', 'Value'], tablefmt="github")
-        string += tabulate(sorted([(v['priority'], k) for k, v in self.callbacks.items()]), ['Priority', 'Callback'])
+        string += tabulate(sorted([(v['priority'], k) for k, v in self.callbacks.items()]), ['Priority', 'Callback'], tablefmt="github")
         return string
 
     @classmethod
@@ -51,6 +52,19 @@ class RepresentedTensor(ABC):
     @abstractclassmethod
     def where_ten(self) -> dict: 
         pass
+
+    def on_perturbs(self) -> None:
+        self._perturb = True
+
+    def off_perturbs(self) -> None:
+        self._perturb = False
+
+    def default_exec_callback_stack(self) -> None:
+        r''' Run the callback stack immediately
+        Counterpart of quantize_perturb that do not ensure quantization/perturbation
+        Mainly for testing purposes
+        '''
+        self.exec_callbacks_stack(self.access_ten())
 
     def exec_callbacks_stack(self, tensor) -> None:
         #TODO an assert that the tensor is not changed apart when priority == 0
@@ -77,12 +91,17 @@ class RepresentedTensor(ABC):
                                float('inf'),
                                autoremove)
 
+    def detach_callback(self, name:str):
+        if name in self.callbacks:
+            self.callbacks.pop(name)
+        else:
+            print(f'The callback {name} is not registered')
+
     def to_repr(self, x) -> None:
-        # TODO mode d'opération sans les perturb ?
         encoded = self.repr.encode(x)
         assert encoded.shape == x.shape, 'The encoded version is not of the same shape as the input tensor'
-        perturbed = self.apply_perturb_to_encoded(encoded)
-        return self.repr.decode(perturbed).to(x.dtype)
+        if self._perturb: encoded = self.apply_perturb_to_encoded(encoded)
+        return self.repr.decode(encoded).to(x.dtype)
 
     def apply_perturb_to_encoded(self, base) -> torch.Tensor:
         for _, pert in self.pert.items():
@@ -104,13 +123,14 @@ class RepresentedTensor(ABC):
                 self.ref_ten = ten
             else:
                 print("Another tensor is already saved") #TODO test if 2 GPU trigger this print
-        self.access_ten_before(func, name='save_tensor')
+        self.access_ten_before(func, name='save_tensor', autoremove=True)
 
-    def restore(self) -> None:
+    def restore(self, purge:bool=True) -> None:
         if self.saved_ten is not None:
             self.ref_ten.data.copy_(self.saved_ten.data.to(self.ref_ten))
-            del self.saved_ten
-            self.saved_ten = None
+            if purge:
+                del self.saved_ten
+                self.saved_ten = None
 
     def compute_bitcount(self)-> None:
         def func(self, output) -> None:
@@ -131,6 +151,8 @@ class RepresentedTensor(ABC):
         r''' Computes the Mean Squared Error between an original tensor and its quantized version
             TODO quantify the impact of data movs. Maybe let saved_ten stay on device at first ?
         '''
+        if self.saved_ten is None and not 'save_tensor' in self.callbacks:
+            self.save()
         def func(self, output) -> None:
             ten = self.saved_ten.to(output)
             loss = nn.MSELoss().to(output)
@@ -182,13 +204,13 @@ class RepresentedParameter(RepresentedTensor):
 
     def quantize_perturb(self) -> None:
         super().quantize_perturb()
-        self.exec_callbacks_stack(self.access_ten())
+        self.default_exec_callback_stack()
 
 @add_type
 class RepresentedActivation(RepresentedTensor):
     r""" Seamlessly cast an activation tensor to faulty hardware
     """
-    def __init__(self, model: nn.Module, name: str, repr: Representation, pert: Optional[Union[Dict, Perturbator]]) -> None:
+    def __init__(self, model: nn.Module, name: str, repr: Representation, pert: Optional[Union[dict, Perturbator]]) -> None:
         super().__init__(model, name, repr, pert=pert)
         self.hook = self.access_ten().register_forward_hook(self.exec_callbacks_stack_act)
 
@@ -198,14 +220,17 @@ class RepresentedActivation(RepresentedTensor):
     def where_ten(self) -> dict:
         return self.model.named_modules()
 
+    def default_exec_callback_stack(self) -> None:
+        pass
+
     def compute_bitcount(self) -> None:
         def func(self, output) -> None:
             self.tensor_stats['bitcount'] = (output.numel() / output.shape[0]) * self.repr.width
         self.access_ten_after(func, name='compute_bitcount',autoremove=True)
 
-    def restore(self) -> None:
+    def restore(self, purge:bool=True) -> None:
         print('Cannot restore an activation, will only delete the saved tensor')
-        if self.saved_ten is not None:
+        if self.saved_ten is not None and purge:
             del self.saved_ten
             self.saved_ten = None
 
