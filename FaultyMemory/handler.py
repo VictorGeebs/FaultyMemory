@@ -39,7 +39,7 @@ class Handler(object):
         Args:
             x: Input to process
         """
-        self.perturb_tensors()
+        self.perturb_tensors() #FIXME not useful to call every time
         out = self.net.forward(x)
         self.restore()
         return out
@@ -51,44 +51,13 @@ class Handler(object):
         [represented_ten.restore() for _, represented_ten in self.represented_ten.items()]
 
     def compute_MSE(self):
-        return [represented_ten.quantize_MSE() for _, represented_ten in self.represented_ten.items()]
+        [represented_ten.quantize_MSE() for _, represented_ten in self.represented_ten.items()]
 
     def value_range(self):
-        return [represented_ten.value_range() for _, represented_ten in self.represented_ten.items()]
+        [represented_ten.value_range() for _, represented_ten in self.represented_ten.items()]
 
     def assign_representation_range(self):
-        old_prec_list = []
-        old_width_list = []
-        old_whole_list = []
-        
-        prec_list = []
-        width_list = []
-        whole_list = []
-        for name, represented_ten in self.represented_ten.items():
-            
-            old_prec_list.append(represented_ten.repr.nb_digits)
-            old_width_list.append(represented_ten.repr.width)
-            old_whole_list.append(represented_ten.repr.width - represented_ten.repr.nb_digits)
-            
-            whole = represented_ten.compute_precision()
-
-            assert isinstance(represented_ten.repr, FixedPointRepresentation)
-            precision = represented_ten.repr.width - whole
-            
-            assert precision >= 0
-
-            prec_list.append(precision)
-            width_list.append(represented_ten.repr.width)
-            whole_list.append(whole)
-
-            represented_ten.repr.nb_digits = precision
-            
-        print("old_prec: ", old_prec_list)
-        print("old_width: ", old_width_list)
-        print("old_whole: ", old_whole_list)
-        print(prec_list)
-        print(width_list)
-        print(whole_list)
+        [represented_ten.adjust_fixed_point() for _, represented_ten in self.represented_ten.items()]
 
     def add_parameter(self, 
                    name: str, 

@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import torch
 import torch.nn as nn
@@ -103,6 +104,13 @@ class FixedPointRepresentation(DigitalRepresentation):
     def __init__(self, width=1, nb_digits=1) -> None:
         super().__init__(width)
         self.nb_digits = nb_digits
+
+    def adjust_fixed_point(self, mini: float, maxi: float) -> None:
+        greatest = max(-mini, maxi)
+        whole = max(math.ceil(math.log(2*greatest, 2)), 0)
+        self.nb_digits = max(self.width - whole, 0)
+        if self.nb_digits == 0:
+            print("Saturated range")
 
     def encode(self, tensor: torch.Tensor) -> torch.Tensor:
         return Cpp_Repr.encodeTenFixedPoint(tensor, self.width, self.nb_digits)
