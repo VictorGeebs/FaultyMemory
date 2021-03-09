@@ -51,6 +51,16 @@ class JustQuantize(Representation):
     def decode(self, tensor: torch.Tensor) -> torch.Tensor:
         return tensor
 
+@add_repr
+class FreebieQuantization(JustQuantize):
+    def __init__(self) -> None:
+        r''' A special case representation for non quantized tensors still stored in memories. Consider 16 bit per item, supposed not to degrade the performance.
+        '''
+        super().__init__(width=16)
+
+    def encode(self, tensor: torch.Tensor) -> torch.Tensor:
+        return tensor
+
 
 @add_repr
 class AnalogRepresentation(Representation):

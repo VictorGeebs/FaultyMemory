@@ -25,6 +25,7 @@ class Perturbator(ABC):
         self.freeze = False
 
     def __call__(self, tensor: torch.Tensor):
+        #FIXME if scalar dist but multibits repr, should inflate dist to match repr
         if (self.distribution.probs == 0).all():
             return tensor
         if not self.freeze:
