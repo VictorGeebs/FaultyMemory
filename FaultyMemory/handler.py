@@ -7,7 +7,6 @@ from FaultyMemory.perturbator import Perturbator
 from FaultyMemory.representation import Representation, FixedPointRepresentation
 from FaultyMemory.represented_tensor import RepresentedParameter, RepresentedActivation, construct_type
 from FaultyMemory.utils import ten_exists
-import copy
 
 from typing import List, Tuple, Union, Optional, Dict
 
@@ -46,32 +45,38 @@ class Handler(object):
         return out
 
     def perturb_tensors(self) -> None:
-        [represented_ten.quantize_perturb() for _, represented_ten in self.represented_ten.items()]
+        [represented_ten.quantize_perturb()
+         for _, represented_ten in self.represented_ten.items()]
 
-    def restore(self, purge:bool=True) -> None:
-        [represented_ten.restore(purge) for _, represented_ten in self.represented_ten.items()]
+    def restore(self, purge: bool = True) -> None:
+        [represented_ten.restore(purge)
+         for _, represented_ten in self.represented_ten.items()]
 
     def compute_MSE(self) -> None:
-        [represented_ten.quantize_MSE() for _, represented_ten in self.represented_ten.items()]
+        [represented_ten.quantize_MSE()
+         for _, represented_ten in self.represented_ten.items()]
 
-    def get_stat(self, stat:str) -> list:
+    def get_stat(self, stat: str) -> list:
         return [represented_ten.tensor_stats[stat] for represented_ten in self.represented_ten.values()]
 
     def get_names(self) -> list:
         return [represented_ten.name for represented_ten in self.represented_ten.values()]
 
     def apply(self, func):
-        [func(represented_ten) for represented_ten in self.represented_ten.values()]
+        [func(represented_ten)
+         for represented_ten in self.represented_ten.values()]
 
     def compute_comparative_MSE(self, data):
         r''' Compute the MSE with respect to the non-quantized and non-perturbed network for the input tensor `data`
         '''
-        headers=['Name', 'Ref (==0)', 'Quantized', 'Quantized_perturbed']
+        headers = ['Name', 'Ref (==0)', 'Quantized', 'Quantized_perturbed']
         # Remove quantize_perturb from callbacks if here
-        self.apply(lambda repr_ten: repr_ten.detach_callback('quantize_perturb'))
+        self.apply(lambda repr_ten: repr_ten.detach_callback(
+            'quantize_perturb'))
         # First pass: MSE cb, for restore purge=False
         self.apply(lambda repr_ten: repr_ten.quantize_MSE())
-        self.apply(lambda repr_ten: repr_ten.default_exec_callback_stack()) # needed for params
+        # needed for params
+        self.apply(lambda repr_ten: repr_ten.default_exec_callback_stack())
         self.net.forward(data)
         ref = self.get_stat('MSE')
         self.restore(purge=False)
@@ -79,14 +84,16 @@ class Handler(object):
         # Second pass: add quantize_perturb, for restore purge=False
         self.apply(lambda repr_ten: repr_ten.off_perturbs())
         self.perturb_tensors()
-        self.apply(lambda repr_ten: repr_ten.default_exec_callback_stack()) # needed for params
+        # needed for params
+        self.apply(lambda repr_ten: repr_ten.default_exec_callback_stack())
         self.net.forward(data)
         quant = self.get_stat('MSE')
         self.restore(purge=False)
 
         # Third pass: activate perturbs, for restore purge=True
         self.apply(lambda repr_ten: repr_ten.on_perturbs())
-        self.apply(lambda repr_ten: repr_ten.default_exec_callback_stack()) # needed for params
+        # needed for params
+        self.apply(lambda repr_ten: repr_ten.default_exec_callback_stack())
         self.net.forward(data)
         pert = self.get_stat('MSE')
         self.restore(purge=True)
@@ -95,10 +102,12 @@ class Handler(object):
         tabulate(zip(self.get_names(), ref, quant, pert), headers)
 
     def value_range(self):
-        [represented_ten.value_range() for _, represented_ten in self.represented_ten.items()]
+        [represented_ten.value_range()
+         for _, represented_ten in self.represented_ten.items()]
 
     def assign_representation_range(self):
-        [represented_ten.adjust_fixed_point() for _, represented_ten in self.represented_ten.items()]
+        [represented_ten.adjust_fixed_point()
+         for _, represented_ten in self.represented_ten.items()]
 
     def dnn_wizard(self):
         r''' Parse a neural network and cast it to a best bet quantization + perturbation
@@ -112,51 +121,59 @@ class Handler(object):
         # 2b - Pick pert
         pass
 
-    def add_parameter(self, 
-                   name: str, 
-                   representation: Representation,
-                   perturb: Optional[Union[Dict, Perturbator]] = None):
+    def add_parameter(self,
+                      name: str,
+                      representation: Representation,
+                      perturb: Optional[Union[Dict, Perturbator]] = None):
         assert name not in self.represented_ten
-        self.represented_ten[name] = RepresentedParameter(self.net, name, representation, perturb)
+        self.represented_ten[name] = RepresentedParameter(
+            self.net, name, representation, perturb)
 
-    def add_activation(self, 
-                   name: str, 
-                   representation: Representation,
-                   perturb: Optional[Union[Dict, Perturbator]] = None):
+    def add_activation(self,
+                       name: str,
+                       representation: Representation,
+                       perturb: Optional[Union[Dict, Perturbator]] = None):
         assert name not in self.represented_ten
-        self.represented_ten[name] = RepresentedActivation(self.net, name, representation, perturb)
+        self.represented_ten[name] = RepresentedActivation(
+            self.net, name, representation, perturb)
 
     def remove_tensor(self, name):
         self.represented_ten.pop(name, None)
 
-    def add_module_parameters(self, 
-                   name: str, 
-                   representation: Representation,
-                   perturb: Optional[Union[Dict, Perturbator]] = None):
+    def add_module_parameters(self,
+                              name: str,
+                              representation: Representation,
+                              perturb: Optional[Union[Dict, Perturbator]] = None):
         net_dict = self.net.named_modules()
         ten_exists(net_dict, name)
         module = net_dict[name]
-        [self.add_tensor(f'{name}.{param_key}', representation, perturb) for param_key, _ in module.named_parameters()]
+        [self.add_tensor(f'{name}.{param_key}', representation, perturb)
+         for param_key, _ in module.named_parameters()]
 
     def remove_module_parameters(self, name: str):
         module = self.net.named_modules()[name]
-        [self.remove_tensor(f'{name}.{param_key}') for param_key, _ in module.named_parameters()]
+        [self.remove_tensor(f'{name}.{param_key}')
+         for param_key, _ in module.named_parameters()]
 
-    def add_net_parameters(self, 
-                           representation: Representation, 
+    def add_net_parameters(self,
+                           representation: Representation,
                            perturb: Optional[Union[Dict, Perturbator]] = None):
-        [self.add_parameter(param_key, representation, perturb) for param_key, _ in self.net.named_parameters()]
+        [self.add_parameter(param_key, representation, perturb)
+         for param_key, _ in self.net.named_parameters()]
 
     def remove_net_parameters(self):
-        [self.remove_tensor(param_key) for param_key, _ in self.net.named_parameters()]
+        [self.remove_tensor(param_key)
+         for param_key, _ in self.net.named_parameters()]
 
-    def add_net_activations(self, 
-                            representation: Representation, 
+    def add_net_activations(self,
+                            representation: Representation,
                             perturb: Optional[Union[Dict, Perturbator]] = None):
-        [self.add_activation(module, representation, perturb) for module, _ in self.net.named_modules()]
+        [self.add_activation(module, representation, perturb)
+         for module, _ in self.net.named_modules()]
 
     def remove_net_activations(self):
-        [self.remove_activation(module) for module, _ in self.net.named_modules()]
+        [self.remove_activation(module)
+         for module, _ in self.net.named_modules()]
 
     def from_json(self, file_path):
         """
@@ -183,11 +200,12 @@ class Handler(object):
 
         # Represented tensors concat
         tensors_list = handler_dict['tensors']
-        
-        self.represented_ten = {**self.represented_ten, **{ten["name"]: construct_type(self.net, ten) for ten in tensors_list}}
+
+        self.represented_ten = {**self.represented_ten, **
+                                {ten["name"]: construct_type(self.net, ten) for ten in tensors_list}}
 
         # Cluster assignement
-        self.assign_clusters() #TODO read and pass arg `clustering_criterion`
+        self.assign_clusters()  # TODO read and pass arg `clustering_criterion`
 
     def to_dict(self):
         handler_dict = {
@@ -202,8 +220,10 @@ class Handler(object):
         perturbations to group them in the handler's clusters.
         Currently only supports Bitwise Perturbations
         """
-        filtered_perts = [ten.pert[clustering_criterion] for ten in self.represented_ten.values() if clustering_criterion in ten.pert]
-        assert len(filtered_perts) > 0, f'Trying to cluster with {clustering_criterion} yield 0 represented_tensor'
+        filtered_perts = [ten.pert[clustering_criterion]
+                          for ten in self.represented_ten.values() if clustering_criterion in ten.pert]
+        assert len(
+            filtered_perts) > 0, f'Trying to cluster with {clustering_criterion} yield 0 represented_tensor'
 
         # Delegate perts to `Cluster` obj
         self.clusters.assign_perts(filtered_perts)
