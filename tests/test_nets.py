@@ -12,6 +12,7 @@ from models import resnet, densenet, vgg
 import FaultyMemory.represented_tensor as represented_tensor
 import csv
 import datetime
+import copy
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
