@@ -11,11 +11,7 @@ jsonpickle==1.4.1
 jsonschema==3.2.0
 keyring==18.0.1
 kiwisolver==1.2.0
-language-selector==0.1
 launchpadlib==1.10.13
-lazr.restfulclient==0.14.2
-lazr.uri==1.0.3
-lazy-object-proxy==1.4.3
 torch==1.8
 torchvision
 tqdm
