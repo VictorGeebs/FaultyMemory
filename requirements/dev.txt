@@ -16,3 +16,4 @@ torch==1.8
 torchvision
 tqdm
 tabulate
+ninja
