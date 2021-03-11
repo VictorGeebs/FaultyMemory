@@ -25,14 +25,18 @@ def perturb(ten: torch.tensor, repr_width, p):
     ten_repr = Cpp_Pert.generateTensorMask(ten, repr_width, p)
 
     print(ten_repr)
-    
-    
+
     ten_np = ten_repr.numpy()
-    packed = np.packbits(ten_np.astype(int), axis=-1, bitorder='little')  # Packing bits in order to create the mask
+    packed = np.packbits(
+        ten_np.astype(int), axis=-1, bitorder="little"
+    )  # Packing bits in order to create the mask
     ten_packed = torch.from_numpy(packed)
-    mask = torch.flatten(ten_packed, start_dim=-2)  # Removing the extra dimension caused by the bit packing
+    mask = torch.flatten(
+        ten_packed, start_dim=-2
+    )  # Removing the extra dimension caused by the bit packing
 
     ten.data = torch.bitwise_xor(ten, mask).data
+
 
 # ---------Perturb Test---------------
 # width = 3
@@ -40,31 +44,31 @@ def perturb(ten: torch.tensor, repr_width, p):
 width = 3
 p = 0.5
 
-vec = [[x for x in range(0,3)] for y in range(0,2)] 
+vec = [[x for x in range(0, 3)] for y in range(0, 2)]
 ten_raw = torch.ByteTensor(vec)
 
 print(ten_raw)
 out = perturb(ten_raw, width, p)
 
 
-#--------------Encode - Decode Tests------------------
+# --------------Encode - Decode Tests------------------
 
-vec = [x/5 for x in range(-5,5)]
+vec = [x / 5 for x in range(-5, 5)]
 ten_raw = torch.FloatTensor(vec)
 isSigned = True
 width = 8
 nbDigits = 8
-#encoded = Cpp_Repr.encodeTenFixedPoint(ten_raw, width, nbDigits)
+# encoded = Cpp_Repr.encodeTenFixedPoint(ten_raw, width, nbDigits)
 vec = [x for x in range(256)]
 encoded = torch.FloatTensor(vec)
 decoded = Cpp_Repr.decodeTenFixedPoint(encoded, width, nbDigits)
 quantized = Cpp_Repr.quantizeTenFixedPoint(ten_raw, width, nbDigits)
-#print(ten_raw)
-#print(encoded)
-#print(decoded)
+# print(ten_raw)
+# print(encoded)
+# print(decoded)
 print("min: ", min(decoded))
 print("max: ", max(decoded))
-#print(quantized)
+# print(quantized)
 
 
 # vec = [x/2 for x in range(-30, 30)]
@@ -82,11 +86,9 @@ print("max: ", max(decoded))
 #     print("")
 
 
-
-
 def test_cpp_perturb(tensors):
     pass
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

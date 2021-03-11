@@ -37,27 +37,48 @@ vgg16.name = "vgg16"
 
 net_list = [resnet18, densenet, vgg16]
 
-normalize = transforms.Normalize(mean=[0.4914, 0.4822, 0.4465],
-                                std=[0.2023, 0.1994, 0.2010])
+normalize = transforms.Normalize(
+    mean=[0.4914, 0.4822, 0.4465], std=[0.2023, 0.1994, 0.2010]
+)
 transform = transforms.Compose([transforms.ToTensor(), normalize])
 
 
 testset = datasets.CIFAR10(
-    root='./data', train=False, download=True, transform=transform)
+    root="./data", train=False, download=True, transform=transform
+)
 
 testloader = torch.utils.data.DataLoader(
-    testset, batch_size=512, shuffle=False, num_workers=2)
+    testset, batch_size=512, shuffle=False, num_workers=2
+)
 
 trainset = datasets.CIFAR10(
-    root='./data', train=True, download=True, transform=transform)
+    root="./data", train=True, download=True, transform=transform
+)
 
 trainloader = torch.utils.data.DataLoader(
-    trainset, batch_size=4, shuffle=True, num_workers=2)
+    trainset, batch_size=4, shuffle=True, num_workers=2
+)
 
 repr_list = [R.FixedPointRepresentation(width=8, nb_digits=8)]
-pert_list = [P.BernoulliXORPerturbation(probs=0), P.BernoulliXORPerturbation(probs=0.01), P.BernoulliXORPerturbation(probs=0.025), P.BernoulliXORPerturbation(probs=0.05), P.BernoulliXORPerturbation(probs=0.1)]
+pert_list = [
+    P.BernoulliXORPerturbation(probs=0),
+    P.BernoulliXORPerturbation(probs=0.01),
+    P.BernoulliXORPerturbation(probs=0.025),
+    P.BernoulliXORPerturbation(probs=0.05),
+    P.BernoulliXORPerturbation(probs=0.1),
+]
 
-csv_data = [["Net Name", "Pert", "Repr", "Init acc", "Handler", "Init Trained", "Handler trained"]]
+csv_data = [
+    [
+        "Net Name",
+        "Pert",
+        "Repr",
+        "Init acc",
+        "Handler",
+        "Init Trained",
+        "Handler trained",
+    ]
+]
 
 
 for net in net_list:
@@ -79,15 +100,29 @@ for net in net_list:
 
             init_acc = utils.test_accuracy(net_copy, testloader)
             handler_acc = utils.test_accuracy(handler, testloader)
-    
+
             net_copy.train()
             utils.train_net(handler, optimizer, criterion, trainloader, 5, prt=False)
 
             init_trained_acc = utils.test_accuracy(net_copy, testloader)
             handler_trained_acc = utils.test_accuracy(handler, testloader)
 
-            csv_data.append([net.name, float(pert.distribution.probs), repr.width, init_acc, handler_acc, init_trained_acc, handler_trained_acc])
+            csv_data.append(
+                [
+                    net.name,
+                    float(pert.distribution.probs),
+                    repr.width,
+                    init_acc,
+                    handler_acc,
+                    init_trained_acc,
+                    handler_trained_acc,
+                ]
+            )
 
-with open('test_nets_' + datetime.now().strftime("%d_%m_%Y__%H_%M_%S") + ".csv", 'w', newline='') as file:
+with open(
+    "test_nets_" + datetime.now().strftime("%d_%m_%Y__%H_%M_%S") + ".csv",
+    "w",
+    newline="",
+) as file:
     writer = csv.writer(file)
     writer.writerows(csv_data)

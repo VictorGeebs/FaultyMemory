@@ -14,12 +14,13 @@ from torch.utils.cpp_extension import load
 
 Cpp_Pert = load(name="Cpp_Pert", sources=["FaultyMemory/cpp/perturbation.cpp"])
 
+
 class SimpleNet(nn.Module):
     def __init__(self):
         super(SimpleNet, self).__init__()
-        self.fc1 = nn.Linear(1,2)
-        self.fc2 = nn.Linear(2,3)
-        self.fc3 = nn.Linear(3,4)
+        self.fc1 = nn.Linear(1, 2)
+        self.fc2 = nn.Linear(2, 3)
+        self.fc3 = nn.Linear(3, 4)
 
     def forward(self, x):
         x = self.fc1(x)
@@ -27,11 +28,12 @@ class SimpleNet(nn.Module):
         x = self.fc3(x)
         return x
 
+
 class SimpleConv(nn.Module):
     def __init__(self):
         super(SimpleConv, self).__init__()
         self.conv1 = nn.Conv2d(3, 6, 5)
-        self.pool = nn.MaxPool2d(2,2)
+        self.pool = nn.MaxPool2d(2, 2)
         self.conv2 = nn.Conv2d(6, 16, 5)
         self.fc1 = nn.Linear(16 * 5 * 5, 120)
         self.fc2 = nn.Linear(120, 84)
@@ -48,7 +50,7 @@ class SimpleConv(nn.Module):
         return x
 
 
-#net = McDo.WRN_McDonnell(depth=28, width=10, num_classes=10, dropit=False, actprec=3)
+# net = McDo.WRN_McDonnell(depth=28, width=10, num_classes=10, dropit=False, actprec=3)
 net = SimpleNet()
 
 print(list(net.named_parameters()))
@@ -58,12 +60,12 @@ handler = H.Handler(net)
 pert = P.BernoulliXORPerturbation(probs=0.5)
 repr = R.BinaryRepresentation()
 
-#handler.add_net_parameters(representation=repr, perturb=pert)
+# handler.add_net_parameters(representation=repr, perturb=pert)
 
-handler.from_json('./profiles/saved_handler.json')
+handler.from_json("./profiles/saved_handler.json")
 
-handler.to_json('./profiles/saved_handler.json')
-#print("Perturbed net: ", dict(handler.net.named_parameters())['conv_last.weight'])
+handler.to_json("./profiles/saved_handler.json")
+# print("Perturbed net: ", dict(handler.net.named_parameters())['conv_last.weight'])
 handler.perturb_tensors()
 
 print(list(net.named_parameters()))

@@ -13,8 +13,9 @@ class Cluster(object):
     Args:
         nb_clusters: number of clusters to reduce to (default 0 -> no clustering)
     """
+
     def __init__(self, nb_clusters: int = 0):
-        self.pert = None # TODO assign_perts here
+        self.pert = None  # TODO assign_perts here
         self.change_nb_clusters(nb_clusters)
 
     def __str__(self):
@@ -31,30 +32,33 @@ class Cluster(object):
 
     def assign_perts(self, perturbations: List[Perturbator]):
         self.pert = perturbations
-        self.ref_params = torch.stack([pert.distribution._param.view(-1) for pert in self.pert])
+        self.ref_params = torch.stack(
+            [pert.distribution._param.view(-1) for pert in self.pert]
+        )
 
     def cluster(self, cluster_func: Callable = kmeans_nparray) -> None:
-        r""" Cluster the perturbations held by this object
+        r"""Cluster the perturbations held by this object
 
         Args:
-            cluster_func: a callable taking two args: a numpy array (1d) and the number of clusters, returns a numpy array (1d) 
+            cluster_func: a callable taking two args: a numpy array (1d) and the number of clusters, returns a numpy array (1d)
         """
         if not self.pert:
-            raise ValueError('Tried to cluster with no assigned perturbations')
+            raise ValueError("Tried to cluster with no assigned perturbations")
         if self.nb_clusters == 0:
             return
 
         if not self.saved:
             self.saved = True
             self.saved_params = sanctify_ten(self.ref_params)
-        new_assignment = cluster_func(np_array=self.ref_params.cpu().numpy(), 
-                                      nb_clusters=self.nb_clusters)
+        new_assignment = cluster_func(
+            np_array=self.ref_params.cpu().numpy(), nb_clusters=self.nb_clusters
+        )
         assert new_assignment.shape == self.ref_params.cpu().numpy().shape
         self.ref_params.data.copy_(torch.from_numpy(new_assignment))
 
     def de_cluster(self):
         if not self.saved:
-            print('Nothing to de-cluster !')
+            print("Nothing to de-cluster !")
         else:
             self.saved = False
             self.ref_params.data.copy_(self.saved_params.data)

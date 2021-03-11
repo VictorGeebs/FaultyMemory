@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
-TEMPERATURE = 2/3
+
+TEMPERATURE = 2 / 3
 CONSTANT = 12.8
 
 # Dim : other, self
@@ -12,7 +13,7 @@ XOR_GRADS = [
     [1, 1, 1, -1, -1, 1, 1, 1],
     [-1, 1, 1, -1, -1, 1, 1, -1],
     [1, -1, -1, -1, -1, -1, -1, 1],
-    [-1, -1, -1, -1, -1, -1, -1, -1]
+    [-1, -1, -1, -1, -1, -1, -1, -1],
 ]
 
 # Portemanteau of Dropout and Bit
@@ -23,30 +24,36 @@ class Dropit(nn.Module):
             raise ValueError("Only precision 3 is supported")
         self.precision = precision
         self.trainable = trainable
-        self.register_buffer('uses', torch.Tensor([0]))
-        self.register_buffer('fan_in', torch.Tensor([0]))
-        self.register_buffer('constant', torch.Tensor([CONSTANT]))
-        self.register_buffer('temp', torch.Tensor([TEMPERATURE]))
-        self.register_buffer('bitrank', torch.tensor([1, 2, 4]))
+        self.register_buffer("uses", torch.Tensor([0]))
+        self.register_buffer("fan_in", torch.Tensor([0]))
+        self.register_buffer("constant", torch.Tensor([CONSTANT]))
+        self.register_buffer("temp", torch.Tensor([TEMPERATURE]))
+        self.register_buffer("bitrank", torch.tensor([1, 2, 4]))
         # self.register_buffer('XOR_GRAD', torch.FloatTensor([7, 5, 3, 1, -1, -3, -5, -7]) -> would cause gradient explosion !
-        if use_oldXOR: self.register_buffer('XOR_GRAD', torch.FloatTensor([1, 1, 1, 1, -1, -1, -1, -1]))
-        else: self.register_buffer('XOR_GRAD', torch.FloatTensor(XOR_GRADS))
+        if use_oldXOR:
+            self.register_buffer(
+                "XOR_GRAD", torch.FloatTensor([1, 1, 1, 1, -1, -1, -1, -1])
+            )
+        else:
+            self.register_buffer("XOR_GRAD", torch.FloatTensor(XOR_GRADS))
         self.use_oldXOR = use_oldXOR
-        self.register_parameter('dropitp', nn.Parameter(
-            torch.Tensor([initial_p]*precision)))
+        self.register_parameter(
+            "dropitp", nn.Parameter(torch.Tensor([initial_p] * precision))
+        )
         self.dropitp.requires_grad = trainable
-        p = getattr(self, f'dropitp')
+        p = getattr(self, f"dropitp")
         p.ptype = self.fan_in
         p.pact = True
 
     def forward(self, x):
         compact_bernouilli = MyRelaxedBernoulli(self.temp, probs=self.dropitp)
-        compact_sample = compact_bernouilli.rsample(
-            sample_shape=x.size()).squeeze_(dim=-1)
-        # if self.use_oldXOR: 
+        compact_sample = compact_bernouilli.rsample(sample_shape=x.size()).squeeze_(
+            dim=-1
+        )
+        # if self.use_oldXOR:
         #     compact_h = torch.sum(compact_sample * self.bitrank, dim=-1)
         #     res = old_xored(x, compact_h, self.XOR_GRAD)
-        # else: 
+        # else:
         compact_sample = torch.sum(compact_sample * self.bitrank, dim=-1)
         res = xored(x, compact_sample)
         return res
@@ -60,49 +67,57 @@ class Dropit(nn.Module):
         self.uses = torch.zeros_like(self.uses)
 
     def consumption(self):
-        return torch.clamp(- torch.log(self.dropitp)/self.constant, 0, 1) * self.fan_in
+        return torch.clamp(-torch.log(self.dropitp) / self.constant, 0, 1) * self.fan_in
 
     def maxcons(self):
-        return self.fan_in*len(self.dropitp)
-    
+        return self.fan_in * len(self.dropitp)
+
     # def get_consumption(self):
     #     return clampzeroone(-torch.log(self.dropitp)/self.constant) * self.fan_in
 
+
 class MyRound(torch.autograd.Function):
     @staticmethod
-    def forward(ctx,input):
+    def forward(ctx, input):
         return torch.round(input)
-    
+
     @staticmethod
-    def backward(ctx,grad):
+    def backward(ctx, grad):
         return grad
+
+
 rounded = MyRound.apply
 
+
 class MyXOR(torch.autograd.Function):
-    """ XOR ops
+    """XOR ops
     Few things to note :
     - need to round the input because its cast to int8 for the xor op -- may severly damage performance if not rounded !
-    - input/xormask are cast to uint8 -- use this after Relu6/quantized ops ! :) 
+    - input/xormask are cast to uint8 -- use this after Relu6/quantized ops ! :)
     - XOR_grad should be the sign of the analytic gradient, otherwise grad explosion through the net
     """
+
     @staticmethod
-    def forward(ctx,input_raw,xormask):
-        input_int = torch.round(input_raw).to(dtype=torch.uint8) # round != cast to int
+    def forward(ctx, input_raw, xormask):
+        input_int = torch.round(input_raw).to(dtype=torch.uint8)  # round != cast to int
         xormask_int = xormask.to(dtype=torch.uint8)
         ctx.save_for_backward(input_int, xormask_int)
         res = torch.bitwise_xor(input_int, xormask_int).to(dtype=input_raw.dtype)
         return res
-    
+
     @staticmethod
-    def backward(ctx,grad):
+    def backward(ctx, grad):
         return grad, None
+
 
 xored = MyXOR.apply
 
+
 class MyRelaxedBernoulli(torch.distributions.RelaxedBernoulli):
-    def rsample(self,*args,**kwargs):
-        sample = super(MyRelaxedBernoulli,self).rsample(*args,**kwargs)
+    def rsample(self, *args, **kwargs):
+        sample = super(MyRelaxedBernoulli, self).rsample(*args, **kwargs)
         return rounded(sample)
+
 
 # class DropitFunction(torch.autograd.Function):
 #     """

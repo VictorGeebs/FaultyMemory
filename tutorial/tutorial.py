@@ -11,29 +11,33 @@ import torch
 import torchvision
 import torchvision.transforms as transforms
 import Dropit as Dropit  # These imports define the structure of the network we will be using
-import wrn_mcdonnell_manual as McDo 
+import wrn_mcdonnell_manual as McDo
 
 
 # Importing network, regular pytorch
-net_path = './models/mcdonnell.pth'
+net_path = "./models/mcdonnell.pth"
 
-net = McDo.WRN_McDonnell(depth=28, width=10, num_classes=10, dropit=False, actprec=3)  # Defining the network we will use
+net = McDo.WRN_McDonnell(
+    depth=28, width=10, num_classes=10, dropit=False, actprec=3
+)  # Defining the network we will use
 
-state_dict = torch.load(net_path, map_location=torch.device('cpu'))['model_state_dict']  # Importing the trained network weights
+state_dict = torch.load(net_path, map_location=torch.device("cpu"))[
+    "model_state_dict"
+]  # Importing the trained network weights
 net.load_state_dict(state_dict)
 
 
 # Creating a testloader to test our network, regular pytorch
 transform = transforms.Compose(
-    [transforms.ToTensor(),
-     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+    [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
+)
 
-testset = torchvision.datasets.CIFAR10(root='./data', train=False,
-                                       download=True,
-                                       transform=transform)
-testloader = torch.utils.data.DataLoader(testset, batch_size=2048,
-                                         shuffle=False,
-                                         num_workers=2)
+testset = torchvision.datasets.CIFAR10(
+    root="./data", train=False, download=True, transform=transform
+)
+testloader = torch.utils.data.DataLoader(
+    testset, batch_size=2048, shuffle=False, num_workers=2
+)
 
 
 """
@@ -68,9 +72,13 @@ import FaultyMemory.perturbator as P
 import FaultyMemory.representation as R
 
 zero_pert = P.Zeros(p=0.1)  # A stuck-at-zero perturbation with a probability of p
-int5_repr = R.Representation(width=5, unsigned=False)  # A 5 bit wide signed integer representation
+int5_repr = R.Representation(
+    width=5, unsigned=False
+)  # A 5 bit wide signed integer representation
 
-my_handler.add_network([zero_pert], int5_repr)  # When adding perturbations, lists are used because you might want to have a series of different perturbations on the same tensors
+my_handler.add_network(
+    [zero_pert], int5_repr
+)  # When adding perturbations, lists are used because you might want to have a series of different perturbations on the same tensors
 
 """
 This network is now ready to be used and tested. Just like a regular module,
@@ -114,7 +122,7 @@ We can save this configuration for future use with the handler.to_json()
 function.
 """
 
-my_handler.to_json('./profiles/saved_handler.json')
+my_handler.to_json("./profiles/saved_handler.json")
 
 
 """
@@ -192,7 +200,8 @@ group tensors to simplify the saved file.
 """
 
 import FaultyMemory.utils as utils
+
 accuracy = utils.test_accuracy(my_handler, testloader)
 
-config_path = './profiles/saved_handler.json'
+config_path = "./profiles/saved_handler.json"
 my_handler.from_json(config_path)
