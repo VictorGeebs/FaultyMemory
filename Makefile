@@ -23,4 +23,4 @@ test: clean
 
 docs: clean
 	pip3 install --quiet -r requirements/docs.txt
-	python3 -m sphinx -b html -W docs docs/build
+	python3 -m sphinx -b html -W docs docs/_build
