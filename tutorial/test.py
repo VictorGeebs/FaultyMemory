@@ -1,5 +1,6 @@
 import sys, os
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
+
+sys.path.insert(1, os.path.join(sys.path[0], ".."))
 
 from tqdm import tqdm
 from BinaryWeightMemory import BinaryWeightMemory
@@ -26,36 +27,40 @@ import torch
 torch.cuda.device(3)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-PATH = './models/mcdonnell.pth'
-SCALING = 'none'
-SCALINGS = ['none', 'he', 'mean']
+PATH = "./models/mcdonnell.pth"
+SCALING = "none"
+SCALINGS = ["none", "he", "mean"]
 
 # all weights binary
 
 transform = transforms.Compose(
-    [transforms.ToTensor(),
-     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))])
+    [
+        transforms.ToTensor(),
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+    ]
+)
 
 # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
 testset = torchvision.datasets.CIFAR10(
-    root='./data', train=False, download=True, transform=transform)
+    root="./data", train=False, download=True, transform=transform
+)
 testloader = torch.utils.data.DataLoader(
-    testset, batch_size=512, shuffle=False, num_workers=2)
+    testset, batch_size=512, shuffle=False, num_workers=2
+)
 
 # init params: depth=28, width=10
 net = McDo.WRN_McDonnell(
-    depth=28, width=10, num_classes=10, dropit=False, actprec=3).to(device)
-state_dict = torch.load(PATH, map_location=device)[
-                        'model_state_dict']
-lanmax_state_space = torch.load(PATH, map_location=device)[
-                                'lanmax_state_space']
+    depth=28, width=10, num_classes=10, dropit=False, actprec=3
+).to(device)
+state_dict = torch.load(PATH, map_location=device)["model_state_dict"]
+lanmax_state_space = torch.load(PATH, map_location=device)["lanmax_state_space"]
 net.load_state_dict(state_dict)
 net.device = device
 net.eval()
 
 handler = H.Handler(net)
-handler.from_json('./profiles/McDo.json')
+handler.from_json("./profiles/McDo.json")
 
 wm = BinaryWeightMemory(net, p=0.01, scaling=SCALING)
 wm.pis = lanmax_state_space
@@ -73,37 +78,37 @@ def iter_weights():
 
 
 def inspect():
-    handler.perturb_tensors('none')
+    handler.perturb_tensors("none")
     weights = iter_weights()
     handler.restore()
 
     idx = 0
-    handler.perturb_tensors('none')
+    handler.perturb_tensors("none")
     for m in net.modules():
         if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
             res = m.weight.data.numpy().flatten().astype(int) + 2
             y = np.bincount(res)
             ii = np.nonzero(y)[0]
             print((m.weight.data.numpy() == weights[idx]).sum())
-            assert((m.weight.data.numpy() == weights[idx]).sum() > 0)
+            assert (m.weight.data.numpy() == weights[idx]).sum() > 0
             idx += 1
     handler.restore()
 
     idx = 0
-    handler.from_json('./profiles/McDo_faultfree.json')
-    handler.perturb_tensors('none')
+    handler.from_json("./profiles/McDo_faultfree.json")
+    handler.perturb_tensors("none")
     for m in net.modules():
         if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
             res = m.weight.data.numpy().flatten().astype(int) + 2
             y = np.bincount(res)
             ii = np.nonzero(y)[0]
             print(list(zip(ii, y[ii])))
-            assert((m.weight.data.numpy() == weights[idx]).sum() > 0)
+            assert (m.weight.data.numpy() == weights[idx]).sum() > 0
             idx += 1
     handler.restore()
 
 
-def test_lib(profile: str = './profiles/McDo_faultfree.json', nb_nets: int = 5):
+def test_lib(profile: str = "./profiles/McDo_faultfree.json", nb_nets: int = 5):
     acc_dict = {}
     handler.from_json(profile)
 
@@ -118,7 +123,9 @@ def test_lib(profile: str = './profiles/McDo_faultfree.json', nb_nets: int = 5):
     return acc_dict
 
 
-def test_legacy(profile: np.ndarray = np.zeros_like(lanmax_state_space), nb_nets: int = 5): 
+def test_legacy(
+    profile: np.ndarray = np.zeros_like(lanmax_state_space), nb_nets: int = 5
+):
     acc_dict = {}
     wm.pis = profile
 
@@ -145,7 +152,7 @@ def test_dset_zerop():
 def test_dset_trainedp():
     torch.manual_seed(0)
     np.random.seed(0)
-    lib_res = test_lib(profile='./profiles/McDo.json', nb_nets=5)
+    lib_res = test_lib(profile="./profiles/McDo.json", nb_nets=5)
     torch.manual_seed(0)
     np.random.seed(0)
     leg_res = test_legacy(profile=lanmax_state_space, nb_nets=5)
@@ -160,17 +167,18 @@ def test_egality():
     wm.binarize()
     weights = iter_weights()
     wm.restore()
-    print(f'Legacy took {time.time() - start}')
+    print(f"Legacy took {time.time() - start}")
 
-    handler.from_json('./profiles/McDo_faultfree.json')
+    handler.from_json("./profiles/McDo_faultfree.json")
     start = time.time()
     handler.perturb_tensors(SCALING)
     weights_lib = iter_weights()
     handler.restore()
-    print(f'Lib took {time.time() - start}')
+    print(f"Lib took {time.time() - start}")
 
     for leg, lib in zip(weights, weights_lib):
-        assert((leg != lib).sum() == 0)
+        assert (leg != lib).sum() == 0
+
 
 # pert_index = 0
 # for name in dict(net.named_parameters()):
@@ -194,7 +202,7 @@ def test_egality():
 # print("Acc: ", results)
 # print("Time: ", tot_time)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # inspect()
     # test_lib()
     # test_lib('./profiles/McDo.json')

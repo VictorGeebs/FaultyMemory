@@ -137,8 +137,7 @@ def generate_point(net, testloader, prob):  # DEPRECATED
 
     net_both = copy.deepcopy(net)
     pert_both = P.Zeros(prob)
-    c_both = C.Cluster([pert_both], networks=[net_both],
-                       network_activations=[net_both])
+    c_both = C.Cluster([pert_both], networks=[net_both], network_activations=[net_both])
     handler_both = H.Handler(net_both, [c_both])
 
     clean_accuracy = test_accuracy(net, testloader)
@@ -172,6 +171,7 @@ def listify(obj: object) -> list:
     else:
         return [obj]
 
+
 def dictify(obj: object) -> dict:
     if isinstance(obj, dict):
         return obj
@@ -182,35 +182,48 @@ def dictify(obj: object) -> dict:
     else:
         return {str(type(obj).__name__): obj}
 
+
 def typestr_to_type(obj):
-    res = re.match('\.([A-z]*)\'', str(type(obj)))
+    res = re.match("\.([A-z]*)'", str(type(obj)))
     if res:
         return res.group(1)
     else:
-        res = re.match('\'([A-z]*)\'', str(type(obj)))
+        res = re.match("'([A-z]*)'", str(type(obj)))
         return res.group(1)
+
 
 def ten_exists(model_dict: dict, name: str) -> None:
     try:
-        assert name in model_dict, f"Specified name {name} not in model_dict and no reference given, cannot add this tensor"
+        assert (
+            name in model_dict
+        ), f"Specified name {name} not in model_dict and no reference given, cannot add this tensor"
     except AssertionError as id:
         print(id)
         return
 
+
 def sanctify_ten(ten: torch.Tensor) -> torch.Tensor:
-    r''' Take any tensor, make a deepcopy of it, and ensure the deepcopy is on CPU
+    r"""Take any tensor, make a deepcopy of it, and ensure the deepcopy is on CPU
 
     Note: `deepcopy` is needed in case the tensor is already on CPU, in which case `.cpu()` do not make a copy
-    '''
+    """
     return copy.deepcopy(ten).cpu()
 
-def sanitize_number(value: Number, mini: Number=float("-inf"), maxi: Number=math.inf, rnd: bool=False) -> Number:
+
+def sanitize_number(
+    value: Number,
+    mini: Number = float("-inf"),
+    maxi: Number = math.inf,
+    rnd: bool = False,
+) -> Number:
     if rnd:
         value = round(value)
     return mini if value < mini else maxi if value > maxi else value
 
+
 def kmeans_nparray(np_array: np.array, nb_clusters: int) -> np.array:
     from scipy.cluster.vq import kmeans, vq, whiten
+
     whitened = whiten(np_array)
     codebook, _ = kmeans(whitened, nb_clusters)
     encoded, _ = vq(np_array, codebook)
