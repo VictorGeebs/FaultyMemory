@@ -1,23 +1,4 @@
-flake8==3.8.3
-future==0.18.2
-httplib2==0.19.0
-idna==2.8
-importlib-metadata==1.7.0
-iniconfig==1.0.1
-isort==4.3.21
-jedi==0.17.0
-Jinja2==2.11.2
-jsonpickle==1.4.1
-jsonschema==3.2.0
-keyring==18.0.1
-kiwisolver==1.2.0
-language-selector==0.1
-launchpadlib==1.10.13
-lazr.restfulclient==0.14.2
-lazr.uri==1.0.3
-lazy-object-proxy==1.4.3
-tabulate
-ninja
+-r ./base.txt
 --no-index
 torch==1.8
 torchvision
