@@ -28,9 +28,13 @@ class Perturbator(ABC):
         if (self.distribution.probs == 0).all():
             return tensor
         if not self.freeze:
-            sample_shape = tensor.size() if self.width_correction == 0 else torch.Size(list(tensor.size()) + [self.width_correction])
+            sample_shape = (
+                tensor.size()
+                if self.width_correction == 0
+                else torch.Size(list(tensor.size()) + [self.width_correction])
+            )
             sample = self.distribution.sample(sample_shape=sample_shape)
-            self.sample_log_probs = - self.distribution.log_prob(sample)
+            self.sample_log_probs = -self.distribution.log_prob(sample)
             sample = self.handle_sample(sample, reduce=(sample.shape != tensor.shape))
             assert (
                 tensor.shape == sample.shape
