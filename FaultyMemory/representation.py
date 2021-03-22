@@ -23,7 +23,7 @@ class Representation(ABC):
     def __init__(self, width: int = 8):
         super().__init__()
         self.width = width
-        assert width > 0 and width <= 8, 'Support for precision up to 8 bits only'
+        assert width > 0 and width <= 8, "Support for precision up to 8 bits only"
 
     def compatibility(self, other: Perturbator) -> bool:
         if other.width > 1:
@@ -127,9 +127,8 @@ class ScaledBinaryRepresentation(DigitalRepresentation):
 
 @add_repr
 class FixedPointRepresentation(DigitalRepresentation):
-    r''' Signed Fixed Point impl.
-    '''
-    #FIXME Fail on HPC system with CUDA GPU
+    r"""Signed Fixed Point impl."""
+    # FIXME Fail on HPC system with CUDA GPU
     def __init__(self, width=1, nb_digits=1) -> None:
         super().__init__(width)
         self.nb_digits = nb_digits
@@ -152,7 +151,7 @@ class FixedPointRepresentation(DigitalRepresentation):
 
     @property
     def min_repr(self):
-        return - 2 ** (self.nb_integer - 1)
+        return -(2 ** (self.nb_integer - 1))
 
     def encode(self, tensor: torch.Tensor) -> torch.Tensor:
         return Cpp_Repr.encodeTenFixedPoint(tensor, self.width, self.nb_digits)
@@ -174,23 +173,30 @@ class UFixedPointRepresentation(FixedPointRepresentation):
 
 @add_repr
 class SlowFixedPointRepresentation(FixedPointRepresentation):
-    'Pure Pytorch Python API FP Representation'
+    "Pure Pytorch Python API FP Representation"
+
     def clamp_and_shift(self, tensor: torch.Tensor) -> torch.Tensor:
         tensor = tensor.clamp(min=self.min_repr, max=self.max_repr)
-        return torch.round_(tensor << self.nb_digits).to(torch.int16) # to not lose the sign yet, and still apply bitwise func
+        return torch.round_(tensor << self.nb_digits).to(
+            torch.int16
+        )  # to not lose the sign yet, and still apply bitwise func
 
     def encode(self, tensor: torch.Tensor) -> torch.Tensor:
         tensor = self.clamp_and_shift(tensor)
-        tensor.apply_(lambda x: torch.bitwise_not(torch.abs(x)) + 1 if x < 0 else x) # 2s compl
+        tensor.apply_(
+            lambda x: torch.bitwise_not(torch.abs(x)) + 1 if x < 0 else x
+        )  # 2s compl
         return tensor.to(torch.uint8)
 
     def decode(self, tensor: torch.Tensor) -> torch.Tensor:
         return (self.min_repr + self.resolution * tensor).to(torch.float32)
 
 
-#TODO not sure it works. Nice not to repeat same code though if it does.
+# TODO not sure it works. Nice not to repeat same code though if it does.
 @add_repr
-class USlowFixedPointRepresentation(SlowFixedPointRepresentation, UFixedPointRepresentation):
+class USlowFixedPointRepresentation(
+    SlowFixedPointRepresentation, UFixedPointRepresentation
+):
     def encode(self, tensor: torch.Tensor) -> torch.Tensor:
         tensor = self.clamp_and_shift(tensor)
         return tensor.to(torch.uint8)
