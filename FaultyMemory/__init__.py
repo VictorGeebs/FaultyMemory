@@ -17,4 +17,4 @@ The user can describe its model in terms of numerical representations (int, uint
 from FaultyMemory.handler import Handler
 import FaultyMemory.represented_tensor as RepresentedTensor
 
-__all__ = ["Handler", "RepresentedTensor"]
+__all__ = [Handler, RepresentedTensor]
