@@ -1,11 +1,5 @@
 import torch
-import torch.nn as nn
 from abc import ABC, abstractclassmethod
-
-# TODO: remove and cleanup
-from torch.utils.cpp_extension import load
-
-Cpp_Pert = load(name="Cpp_Pert", sources=["FaultyMemory/cpp/perturbation.cpp"])
 
 BITRANK = torch.tensor([1, 2, 4, 8, 16, 32, 64, 128])
 
@@ -25,16 +19,18 @@ class Perturbator(ABC):
     repr_compatibility = []
 
     def __init__(self, **kwargs):
-        self._kwargs = {**kwargs}
         self.distribution = kwargs
         self.freeze = False
+        self.width_correction = 0
 
     def __call__(self, tensor: torch.Tensor):
         # FIXME if scalar dist but multibits repr, should inflate dist to match repr
         if (self.distribution.probs == 0).all():
             return tensor
         if not self.freeze:
-            sample = self.distribution.sample(sample_shape=tensor.size())
+            sample_shape = tensor.size() if self.width_correction == 0 else torch.Size(list(tensor.size()) + [self.width_correction])
+            sample = self.distribution.sample(sample_shape=sample_shape)
+            self.sample_log_probs = - self.distribution.log_prob(sample)
             sample = self.handle_sample(sample, reduce=(sample.shape != tensor.shape))
             assert (
                 tensor.shape == sample.shape
@@ -66,6 +62,7 @@ class Perturbator(ABC):
 
     @distribution.setter
     def distribution(self, kwargs):
+        self._kwargs = {**kwargs}
         self._distribution = self.define_distribution(kwargs)
         if self.distribution._param.dim() == 0:  # 0-dim tensor (scalar)
             self.width = 1
