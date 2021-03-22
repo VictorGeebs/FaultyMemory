@@ -27,7 +27,7 @@ class Representation(ABC):
     def compatibility(self, other: Perturbator) -> bool:
         if other.width > 1:
             # First case, both repr and pert on multibits = should be same
-            width_check = (self.width == other.width)
+            width_check = self.width == other.width
         else:
             # Scd case, pert is scalar = should inflate to match repr width
             width_check = True
