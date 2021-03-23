@@ -44,10 +44,12 @@ class Representation(ABC):
 
     @abstractclassmethod
     def encode(self, tensor: torch.Tensor) -> torch.Tensor:
+        r''' By convention, do not return the same tensor as is'''
         pass
 
     @abstractclassmethod
     def decode(self, tensor: torch.Tensor) -> torch.Tensor:
+        r''' By convention, do not return the same tensor as is'''
         pass
 
     def to_json(self):
