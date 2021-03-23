@@ -2,6 +2,7 @@ import math
 import numpy as np
 import torch
 import torch.nn as nn
+from numbers import Number
 from FaultyMemory.perturbator import Perturbator
 from abc import ABC, abstractclassmethod
 from torch.utils.cpp_extension import load
@@ -131,13 +132,16 @@ class ScaledBinaryRepresentation(DigitalRepresentation):
 
 @add_repr
 class FixedPointRepresentation(DigitalRepresentation):
-    r"""Signed Fixed Point impl."""
+    r"""Signed Fixed Point impl.
+    By default, range is optimized in the interval +- 3.0
+    """
     # FIXME Fail on HPC system with CUDA GPU
     def __init__(self, width=1, nb_digits=1) -> None:
         super().__init__(width)
         self.nb_digits = nb_digits
+        self.adjust_fixed_point(mini=-3, maxi=3)
 
-    def adjust_fixed_point(self, mini: float, maxi: float) -> None:
+    def adjust_fixed_point(self, mini: Number, maxi: Number) -> None:
         greatest = max(-mini, maxi)
         whole = max(math.ceil(math.log(2 * greatest, 2)), 0)
         self.nb_integer = min(whole, self.width)
