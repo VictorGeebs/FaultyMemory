@@ -65,7 +65,7 @@ class JustQuantize(Representation):
     """
 
     def decode(self, tensor: torch.Tensor) -> torch.Tensor:
-        return tensor
+        return tensor.clone()
 
 
 @add_repr
@@ -75,7 +75,7 @@ class FreebieQuantization(JustQuantize):
         super().__init__(width=16)
 
     def encode(self, tensor: torch.Tensor) -> torch.Tensor:
-        return tensor
+        return tensor.clone()
 
 
 @add_repr
@@ -89,10 +89,10 @@ class AnalogRepresentation(Representation):
         )  # width is 1 in this case, each value of the tensor is a 1d float
 
     def encode(self, tensor: torch.Tensor) -> torch.Tensor:
-        return tensor
+        return tensor.clone()
 
     def decode(self, tensor: torch.Tensor) -> torch.Tensor:
-        return tensor
+        return tensor.clone()
 
 
 class DigitalRepresentation(Representation):

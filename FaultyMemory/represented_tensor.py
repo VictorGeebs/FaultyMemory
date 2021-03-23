@@ -129,9 +129,6 @@ class RepresentedTensor(ABC):
     def to_repr(self, x) -> None:
         # TODO pre-compute the fault mask with bitwise ops so as not to create dependicies in the comp. graph on encoded and achieve potential speed-ups
         encoded = self.repr.encode(x)
-        assert (
-            encoded.shape == x.shape
-        ), "The encoded version is not of the same shape as the input tensor"
         if self._perturb:
             encoded = self.apply_perturb_to_encoded(encoded)
         return self.repr.decode(encoded).to(x.dtype)
