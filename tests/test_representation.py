@@ -1,7 +1,8 @@
 import FaultyMemory.representation as Representation
 import torch
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 def encode_decode(tensor: torch.Tensor, repr: Representation):
     encoded = repr.encode(tensor)
