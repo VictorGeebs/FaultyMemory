@@ -27,8 +27,8 @@ def test_distinct_reference():
         encoded, decoded = encode_decode(tensor, instance)
         assert decoded.dtype == tensor.dtype
         assert encoded.device == tensor.device == decoded.device
-        assert tensor.storage.data_ptr() != encoded.storage.data_ptr()
-        assert tensor.storage.data_ptr() != decoded.storage.data_ptr()
+        assert tensor.data_ptr() != encoded.data_ptr()
+        assert tensor.data_ptr() != decoded.data_ptr()
         if instance.__COMPAT__ != 'DIGITAL':
             continue
         assert encoded.dtype == torch.uint8
