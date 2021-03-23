@@ -19,7 +19,7 @@ def test_distinct_reference():
     r"""All encode and decode steps should produce a distinct tensor
     Device should be kept all along
     Input tensor and decoded tensor should have same dtype
-    Also check if encoded is int8 (if digital) 
+    Also check if encoded is int8 (if digital)
     """
     for repr in Representation.REPR_DICT.values():
         instance = repr()
