@@ -53,6 +53,14 @@ class Representation(ABC):
         r""" By convention, do not return the same tensor as is"""
         pass
 
+    def save_attributes(self, tensor: torch.Tensor) -> None:
+        self._target_device = tensor.device
+        self._target_dtype = tensor.dtype
+        self._target_shape = tensor.shape
+
+    def load_attributes(self, tensor: torch.Tensor) -> None:
+        tensor.to(self._target_device, self._target_dtype)
+
     def to_json(self):
         r"""
         Creates and returns a dictionnary with the necessary information to
@@ -113,7 +121,7 @@ class BinaryRepresentation(DigitalRepresentation):
         return tensor.to(torch.uint8)
 
     def decode(self, tensor: torch.Tensor) -> torch.Tensor:
-        return (tensor.to(torch.float32) * 2) - 1
+        return self.load_attributes((tensor.to(torch.float32) * 2) - 1)
 
 
 @add_repr
@@ -127,7 +135,7 @@ class ScaledBinaryRepresentation(DigitalRepresentation):
         return tensor.to(torch.uint8)
 
     def decode(self, tensor: torch.Tensor) -> torch.Tensor:
-        return ((tensor * 2) - 1) * self.mean
+        return self.load_attributes(((tensor * 2) - 1) * self.mean)
 
 
 @add_repr
@@ -201,7 +209,7 @@ class SlowFixedPointRepresentation(FixedPointRepresentation):
         return tensor.to(torch.uint8)
 
     def decode(self, tensor: torch.Tensor) -> torch.Tensor:
-        return (self.min_repr + self.resolution * tensor).to(torch.float32)
+        return self.load_attributes(self.min_repr + self.resolution * tensor)
 
 
 # TODO not sure it works. Nice not to repeat same code though if it does.
@@ -225,19 +233,19 @@ class ClusteredRepresentation(DigitalRepresentation):
         super().__init__(width=min(np.log(next) / np.log(2), 8))
 
     def encode(self, tensor: torch.Tensor) -> torch.Tensor:
+        self.save_attributes(tensor)
         # TODO pure pytorch impl of kmeans (avoid round trip to cpu)
         from scipy.cluster.vq import vq, kmeans, whiten
 
         whitened = whiten(tensor.clone().cpu().flatten().numpy())
         self.codebook, _ = kmeans(whitened, 2 ** self.width)
         cluster, _ = vq(whitened, self.codebook)
-        return torch.tensor(cluster).view(tensor.shape).to(torch.uint8)
+        return torch.tensor(cluster).view(self._target_shape).to(self._target_device, torch.uint8)
 
     def decode(self, tensor: torch.Tensor) -> torch.Tensor:
-        shape = tensor.shape
         tensor = tensor.flatten()
-        tensor = torch.gather(torch.from_numpy(self.codebook), 0, tensor)
-        return tensor.view(shape)
+        tensor = torch.gather(torch.from_numpy(self.codebook), 0, tensor.to(torch.int64))
+        return self.load_attributes(tensor.view(self._target_shape))
 
 
 def construct_repr(repr_dict, user_repr={}):

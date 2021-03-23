@@ -1,6 +1,7 @@
 import FaultyMemory.representation as Representation
 import torch
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def encode_decode(tensor: torch.Tensor, repr: Representation):
     encoded = repr.encode(tensor)
@@ -23,7 +24,7 @@ def test_distinct_reference():
     """
     for repr in Representation.REPR_DICT.values():
         instance = repr()
-        tensor = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+        tensor = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]).to(device)
         encoded, decoded = encode_decode(tensor, instance)
         assert decoded.dtype == tensor.dtype
         assert encoded.device == tensor.device == decoded.device
