@@ -58,8 +58,8 @@ class Representation(ABC):
         self._target_dtype = tensor.dtype
         self._target_shape = tensor.shape
 
-    def load_attributes(self, tensor: torch.Tensor) -> None:
-        tensor.to(self._target_device, self._target_dtype)
+    def load_attributes(self, tensor: torch.Tensor) -> torch.Tensor:
+        return tensor.to(self._target_device, self._target_dtype)
 
     def to_json(self):
         r"""
