@@ -136,16 +136,20 @@ class FixedPointRepresentation(DigitalRepresentation):
     By default, range is optimized in the interval +- 3.0
     """
     # FIXME Fail on HPC system with CUDA GPU
-    def __init__(self, width=1, nb_digits=1) -> None:
+    def __init__(self, width=8, nb_digits=-1) -> None:
         super().__init__(width)
-        self.nb_digits = nb_digits
-        self.adjust_fixed_point(mini=-3, maxi=3)
+        if self.nb_digits >= 0:
+            assert nb_digits <= width
+            self.nb_digits = nb_digits
+            self.nb_integer = width - nb_digits
+        else:
+            self.adjust_fixed_point(mini=-3, maxi=3)
 
     def adjust_fixed_point(self, mini: Number, maxi: Number) -> None:
         greatest = max(-mini, maxi)
         whole = max(math.ceil(math.log(2 * greatest, 2)), 0)
         self.nb_integer = min(whole, self.width)
-        self.nb_digits = max(self.width - whole, 0)
+        self.nb_digits = max(self.width - self.nb_integer, 0)
         if self.nb_digits == 0:
             print("Saturated range")
 
