@@ -23,8 +23,6 @@ def test_distinct_reference():
     """
     for repr in Representation.REPR_DICT.values():
         instance = repr()
-        if instance.__COMPAT__ != "DIGITAL":
-            continue
         tensor = torch.tensor([1.0])
         encoded, decoded = encode_decode(tensor, instance)
         assert decoded.dtype == tensor.dtype
