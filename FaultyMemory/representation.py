@@ -117,6 +117,7 @@ class BinaryRepresentation(DigitalRepresentation):
         super().__init__(width=1)
 
     def encode(self, tensor: torch.Tensor) -> torch.Tensor:
+        self.save_attributes(tensor)
         tensor = (torch.sign(tensor) + 1) / 2
         return tensor.to(torch.uint8)
 
@@ -130,6 +131,7 @@ class ScaledBinaryRepresentation(DigitalRepresentation):
         super().__init__(width=1)
 
     def encode(self, tensor: torch.Tensor) -> torch.Tensor:
+        self.save_attributes(tensor)
         self.mean = torch.mean(torch.abs(tensor))
         tensor = torch.sign(tensor) + 2 - 1
         return tensor.to(torch.uint8)
@@ -174,6 +176,7 @@ class FixedPointRepresentation(DigitalRepresentation):
         return -(2 ** (self.nb_integer - 1))
 
     def encode(self, tensor: torch.Tensor) -> torch.Tensor:
+        self.save_attributes(tensor)
         return Cpp_Repr.encodeTenFixedPoint(tensor, self.width, self.nb_digits)
 
     def decode(self, tensor: torch.Tensor) -> torch.Tensor:
@@ -202,6 +205,7 @@ class SlowFixedPointRepresentation(FixedPointRepresentation):
         )  # to not lose the sign yet, and still apply bitwise func
 
     def encode(self, tensor: torch.Tensor) -> torch.Tensor:
+        self.save_attributes(tensor)
         tensor = self.clamp_and_shift(tensor)
         tensor.apply_(
             lambda x: torch.bitwise_not(torch.abs(x)) + 1 if x < 0 else x
@@ -218,6 +222,7 @@ class USlowFixedPointRepresentation(
     SlowFixedPointRepresentation, UFixedPointRepresentation
 ):
     def encode(self, tensor: torch.Tensor) -> torch.Tensor:
+        self.save_attributes(tensor)
         tensor = self.clamp_and_shift(tensor)
         return tensor.to(torch.uint8)
 
