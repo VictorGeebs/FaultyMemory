@@ -19,7 +19,7 @@ def test_distinct_reference():
     r"""All encode and decode steps should produce a distinct tensor
     Also check if encoded is int8 and device is kept
     """
-    for repr in Representation.REPR_DICT:
+    for repr in Representation.REPR_DICT.values():
         instance = repr()
         tensor = torch.tensor([1.0])
         encoded, decoded = encode_decode(tensor, instance)
