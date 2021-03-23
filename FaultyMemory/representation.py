@@ -240,11 +240,17 @@ class ClusteredRepresentation(DigitalRepresentation):
         whitened = whiten(tensor.clone().cpu().flatten().numpy())
         self.codebook, _ = kmeans(whitened, 2 ** self.width)
         cluster, _ = vq(whitened, self.codebook)
-        return torch.tensor(cluster).view(self._target_shape).to(self._target_device, torch.uint8)
+        return (
+            torch.tensor(cluster)
+            .view(self._target_shape)
+            .to(self._target_device, torch.uint8)
+        )
 
     def decode(self, tensor: torch.Tensor) -> torch.Tensor:
         tensor = tensor.flatten()
-        tensor = torch.gather(torch.from_numpy(self.codebook), 0, tensor.to(torch.int64))
+        tensor = torch.gather(
+            torch.from_numpy(self.codebook), 0, tensor.to(torch.int64)
+        )
         return self.load_attributes(tensor.view(self._target_shape))
 
 
