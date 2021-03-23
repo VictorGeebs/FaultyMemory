@@ -138,7 +138,7 @@ class FixedPointRepresentation(DigitalRepresentation):
     # FIXME Fail on HPC system with CUDA GPU
     def __init__(self, width=8, nb_digits=-1) -> None:
         super().__init__(width)
-        if self.nb_digits >= 0:
+        if nb_digits >= 0:
             assert nb_digits <= width
             self.nb_digits = nb_digits
             self.nb_integer = width - nb_digits
