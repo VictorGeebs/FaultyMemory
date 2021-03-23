@@ -23,7 +23,8 @@ def test_distinct_reference():
     Input tensor and decoded tensor should have same dtype
     Also check if encoded is int8 (if digital)
     """
-    for repr in Representation.REPR_DICT.values():
+    for name, repr in Representation.REPR_DICT.items():
+        print(name)
         instance = repr()
         tensor = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]).to(device)
         encoded, decoded = encode_decode(tensor, instance)

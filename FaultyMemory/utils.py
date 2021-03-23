@@ -185,11 +185,11 @@ def dictify(obj: object) -> dict:
 
 
 def typestr_to_type(obj):
-    res = re.match("\.([A-z]*)'", str(type(obj)))
+    res = re.match(r"\.([A-z]*)'", str(type(obj)))
     if res:
         return res.group(1)
     else:
-        res = re.match("'([A-z]*)'", str(type(obj)))
+        res = re.match(r"'([A-z]*)'", str(type(obj)))
         return res.group(1)
 
 
