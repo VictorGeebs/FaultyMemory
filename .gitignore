@@ -7,4 +7,5 @@ data/*
 */__pycache__/*
 *.pth
 *.egg*
+outputs/*
 .DS_Store
