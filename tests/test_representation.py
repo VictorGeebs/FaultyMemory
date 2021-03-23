@@ -19,7 +19,7 @@ def test_distinct_reference():
     r"""All encode and decode steps should produce a distinct tensor
     Device should be kept all along
     Input tensor and decoded tensor should have same dtype
-    Also check if encoded is int8 (if digital) 
+    Also check if encoded is int8 (if digital)
     """
     for repr in Representation.REPR_DICT.values():
         instance = repr()
@@ -29,6 +29,6 @@ def test_distinct_reference():
         assert encoded.device == tensor.device == decoded.device
         assert tensor.storage.data_ptr() != encoded.storage.data_ptr()
         assert tensor.storage.data_ptr() != decoded.storage.data_ptr()
-        if instance.__COMPAT__ != 'DIGITAL':
+        if instance.__COMPAT__ != "DIGITAL":
             continue
         assert encoded.dtype == torch.uint8
