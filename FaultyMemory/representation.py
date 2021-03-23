@@ -221,7 +221,7 @@ class ClusteredRepresentation(DigitalRepresentation):
         super().__init__(width=min(np.log(next) / np.log(2), 8))
 
     def encode(self, tensor: torch.Tensor) -> torch.Tensor:
-        #TODO pure pytorch impl of kmeans (avoid round trip to cpu)
+        # TODO pure pytorch impl of kmeans (avoid round trip to cpu)
         from scipy.cluster.vq import vq, kmeans, whiten
 
         whitened = whiten(tensor.clone().cpu().flatten().numpy())
