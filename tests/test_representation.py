@@ -23,7 +23,7 @@ def test_distinct_reference():
     """
     for repr in Representation.REPR_DICT.values():
         instance = repr()
-        tensor = torch.tensor([[1.0, 2.0, 3.0][4.0, 5.0, 6.0]])
+        tensor = torch.tensor([[1.0, 2.0, 3.0],[4.0, 5.0, 6.0]])
         encoded, decoded = encode_decode(tensor, instance)
         assert decoded.dtype == tensor.dtype
         assert encoded.device == tensor.device == decoded.device
