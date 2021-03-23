@@ -127,6 +127,7 @@ class RepresentedTensor(ABC):
             print(f"The callback {name} is not registered")
 
     def to_repr(self, x) -> None:
+        #TODO pre-compute the fault mask with bitwise ops so as not to create dependicies in the comp. graph on encoded and achieve potential speed-ups
         encoded = self.repr.encode(x)
         assert (
             encoded.shape == x.shape
