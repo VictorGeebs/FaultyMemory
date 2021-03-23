@@ -23,7 +23,7 @@ class Representation(ABC):
     def __init__(self, width: int = 8):
         super().__init__()
         self.width = width
-        assert width > 0 and width <= 8 or 'FreebieQuantization' in self.__name__ , "Support for precision up to 8 bits only"
+        assert width > 0 and width <= 8 or 'FreebieQuantization' in self.__class__.__name__ , "Support for precision up to 8 bits only"
 
     def compatibility(self, other: Perturbator) -> bool:
         if other.width > 1:
