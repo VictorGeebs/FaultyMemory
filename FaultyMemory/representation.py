@@ -22,7 +22,7 @@ REPR_DICT = {}
 
 
 def add_repr(func: Callable) -> Callable:
-    r""" Decorator to populate `REPR_DICT`
+    r"""Decorator to populate `REPR_DICT`
 
     Args:
         func (Callable): The representation class
@@ -270,7 +270,7 @@ class ClusteredRepresentation(DigitalRepresentation):
 
 
 def construct_repr(repr_dict: dict = None, user_repr: dict = None) -> Representation:
-    r""" Construct a representation according to the dictionnary provided.
+    r"""Construct a representation according to the dictionnary provided.
 
     The dictionnary should have a field for 'name' equals to the name of the class, the width of the repr
     If `repr_dict` is None, return a FreebieQuantization

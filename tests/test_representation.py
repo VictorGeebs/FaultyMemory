@@ -9,7 +9,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 @pytest.fixture
 def simple_tensor() -> torch.Tensor:
-    """ A simple 2 dimensional tensor put on device
+    """A simple 2 dimensional tensor put on device
 
     Returns:
         torch.Tensor: tensor of symmetric values around 0 from 1 to 3 in (2x3) format
@@ -28,26 +28,34 @@ def test_freebie(simple_tensor) -> None:
     assert torch.equal(simple_tensor, encoded)
     assert torch.equal(simple_tensor, decoded)
 
+
 def test_binary(simple_tensor) -> None:
     pass
+
 
 def test_scaled_binary(simple_tensor) -> None:
     pass
 
+
 def test_fixed_point(simple_tensor) -> None:
     pass
+
 
 def test_ufixed_point(simple_tensor) -> None:
     pass
 
+
 def test_slowfixed_point(simple_tensor) -> None:
     pass
+
 
 def test_uslowfixed_point(simple_tensor) -> None:
     pass
 
+
 def test_clustered(simple_tensor) -> None:
     pass
+
 
 def test_distinct_reference(simple_tensor) -> None:
     r"""All encode and decode steps should produce a distinct tensor
