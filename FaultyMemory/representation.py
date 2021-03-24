@@ -1,31 +1,48 @@
+r""" Classes to represent numbers in memory.
+
+Each usable class is stored in `REPR_DICT`
+Can be Digital or Analog representation
+They at least expose two methods: encode and decode
+
+Encode returns a tensor in uint8 format
+Decode takes a tensor in uint8 format
+"""
 import math
 import numpy as np
 import torch
-import torch.nn as nn
-from numbers import Number
-from FaultyMemory.perturbator import Perturbator
+import logging
+from .perturbator import Perturbator
 from abc import ABC, abstractclassmethod
 from torch.utils.cpp_extension import load
+from typing import Callable
 
 Cpp_Repr = load(name="Cpp_Repr", sources=["FaultyMemory/cpp/representation.cpp"])
 
 REPR_DICT = {}
 
 
-def add_repr(func):
+def add_repr(func: Callable) -> Callable:
+    r""" Decorator to populate `REPR_DICT`
+
+    Args:
+        func (Callable): The representation class
+
+    Returns:
+        Callable: The same representation class
+    """
     REPR_DICT[func.__name__] = func
     return func
 
 
 class Representation(ABC):
     r"""Base class for custom representations"""
-    __COMPAT__ = None
+    __COMPAT__ = "None"
 
     def __init__(self, width: int = 8):
         super().__init__()
         self.width = width
         assert (
-            width > 0 and width <= 8 or "FreebieQuantization" in self.__class__.__name__
+            0 < width <= 8 or "FreebieQuantization" in self.__class__.__name__
         ), "Support for precision up to 8 bits only"
 
     def compatibility(self, other: Perturbator) -> bool:
@@ -39,19 +56,13 @@ class Representation(ABC):
                 other.width_correction = self.width
         return self.__COMPAT__ in other.repr_compatibility and width_check
 
-    # @abstractclassmethod TODO
-    # def quantize(self, tensor: torch.Tensor) -> torch.Tensor:
-    #     pass
-
     @abstractclassmethod
     def encode(self, tensor: torch.Tensor) -> torch.Tensor:
         r""" By convention, do not return the same tensor as is"""
-        pass
 
     @abstractclassmethod
     def decode(self, tensor: torch.Tensor) -> torch.Tensor:
         r""" By convention, do not return the same tensor as is"""
-        pass
 
     def save_attributes(self, tensor: torch.Tensor) -> None:
         self._target_device = tensor.device
@@ -61,13 +72,13 @@ class Representation(ABC):
     def load_attributes(self, tensor: torch.Tensor) -> torch.Tensor:
         return tensor.to(self._target_device, self._target_dtype)
 
-    def to_json(self):
+    def to_json(self) -> dict:
         r"""
         Creates and returns a dictionnary with the necessary information to
         re-construct this instance
         """
-        dict = {"name": type(self).__name__, "width": self.width}
-        return dict
+        _dict = {"name": type(self).__name__, "width": self.width}
+        return _dict
 
 
 class JustQuantize(Representation):
@@ -108,7 +119,6 @@ class AnalogRepresentation(Representation):
 
 class DigitalRepresentation(Representation):
     __COMPAT__ = "DIGITAL"
-    pass
 
 
 @add_repr
@@ -155,7 +165,7 @@ class FixedPointRepresentation(DigitalRepresentation):
         else:
             self.adjust_fixed_point(mini=-3, maxi=3)
 
-    def adjust_fixed_point(self, mini: Number, maxi: Number) -> None:
+    def adjust_fixed_point(self, mini: float, maxi: float) -> None:
         greatest = max(-mini, maxi)
         whole = max(math.ceil(math.log(2 * greatest, 2)), 0)
         self.nb_integer = min(whole, self.width)
@@ -232,7 +242,7 @@ class ClusteredRepresentation(DigitalRepresentation):
     def __init__(self, num_cluster: int = 4) -> None:
         next = 2 ** np.ceil(np.log(num_cluster) / np.log(2))
         if next != num_cluster:
-            Warning.warn(
+            logging.warning(
                 "Number of cluster not fully using all bits, rounding up to the nearest power of 2 (max=8)"
             )
         super().__init__(width=min(np.log(next) / np.log(2), 8))
@@ -259,12 +269,16 @@ class ClusteredRepresentation(DigitalRepresentation):
         return self.load_attributes(tensor.view(self._target_shape))
 
 
-def construct_repr(repr_dict, user_repr={}):
-    r"""
-    Constructs a representation according to the dictionnary provided.
+def construct_repr(repr_dict: dict = None, user_repr: dict = None) -> Representation:
+    r""" Construct a representation according to the dictionnary provided.
+
     The dictionnary should have a field for 'name' equals to the name of the class, the width of the repr
+    If `repr_dict` is None, return a FreebieQuantization
     """
     if repr_dict is None:
-        return None
-    all_repr = dict(REPR_DICT, **user_repr)
+        return FreebieQuantization()
+    if user_repr is not None:
+        all_repr = dict(REPR_DICT, **user_repr)
+    else:
+        all_repr = REPR_DICT
     return all_repr[repr_dict["name"]](width=repr_dict["width"])

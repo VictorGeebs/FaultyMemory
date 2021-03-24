@@ -1,4 +1,4 @@
 -r ./base.txt
 --no-index
-torch==1.8
+torch>=1.8
 torchvision

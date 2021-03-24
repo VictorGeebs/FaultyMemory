@@ -1,5 +1,5 @@
 -r ./base.txt
-torch==1.8
+torch>=1.8
 torchvision
 
 -r ./test.txt

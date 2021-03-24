@@ -14,7 +14,9 @@ FaultyMemory aims to brings painless fault-aware training by providing an easy-t
 The user can describe its model in terms of numerical representations (int, uint, binary, ...).
 """
 
-from FaultyMemory.handler import Handler
-import FaultyMemory.represented_tensor as RepresentedTensor
-
-__all__ = [Handler, RepresentedTensor]
+from .handler import *  # noqa: E402
+from .cluster import *  # noqa: E402
+from .perturbator import *  # noqa: E402
+from .representation import *  # noqa: E402
+from .represented_tensor import *  # noqa: E402
+from .utils import *  # noqa: E402

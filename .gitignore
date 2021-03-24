@@ -2,10 +2,11 @@ tests/tempCodeRunnerFile.py
 tests/job.sh
 profiles/extra.txt
 .vscode/*
-.pytest_cache/*
 data/*
 */__pycache__/*
 *.pth
 *.egg*
 outputs/*
 .DS_Store
+.*_cache
+.coverage
