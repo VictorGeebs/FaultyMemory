@@ -218,7 +218,7 @@ class SlowFixedPointRepresentation(FixedPointRepresentation):
         self.save_attributes(tensor)
         tensor = self.clamp_and_shift(tensor)
         tensor.apply_(
-            lambda x: torch.bitwise_not(torch.abs(x)) + 1 if x < 0 else x
+            lambda x: torch.bitwise_not(x.abs()) + 1 if x < 0 else x
         )  # 2s compl
         return tensor.to(torch.uint8)
 
