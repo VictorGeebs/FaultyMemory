@@ -217,10 +217,7 @@ class SlowFixedPointRepresentation(FixedPointRepresentation):
     def encode(self, tensor: torch.Tensor) -> torch.Tensor:
         self.save_attributes(tensor)
         tensor = self.clamp_and_shift(tensor)
-        # tensor.apply_(
-        #     lambda x: torch.bitwise_not(x.abs()) + 1 if x < 0 else x
-        # )  # 2s compl
-        tensor = torch.where(tensor < 0, torch.bitwise_not(tensor.abs()) + 1, tensor)
+        tensor = torch.where(tensor < 0, torch.bitwise_not(tensor.abs()) + 1, tensor)  # 2s compl
         return tensor.to(torch.uint8)
 
     def decode(self, tensor: torch.Tensor) -> torch.Tensor:
