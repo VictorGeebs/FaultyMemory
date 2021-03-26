@@ -10,3 +10,4 @@ outputs/*
 .DS_Store
 .*_cache
 .coverage
+.venv

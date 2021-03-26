@@ -3,6 +3,7 @@
 import FaultyMemory as FyM
 import torch
 import pytest
+import logging
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -15,6 +16,16 @@ def simple_tensor() -> torch.Tensor:
         torch.Tensor: tensor of symmetric values around 0 from 1 to 3 in (2x3) format
     """
     return torch.tensor([[-1.0, -2.0, -3.0], [1.0, 2.0, 3.0]]).to(device)
+
+
+@pytest.fixture
+def floating_tensor() -> torch.Tensor:
+    """A simple 2 dimensional tensor put on device
+
+    Returns:
+        torch.Tensor: tensor of symmetric values around 0 from 0 to 1 (2x3) format
+    """
+    return torch.tensor([[-1.0, -.5, -.33], [1.0, .5, .33]]).to(device)
 
 
 def encode_decode(tensor: torch.Tensor, representation: FyM.Representation):
@@ -30,15 +41,58 @@ def test_freebie(simple_tensor) -> None:
 
 
 def test_binary(simple_tensor) -> None:
-    pass
+    representation = FyM.BinaryRepresentation()
+    encoded, decoded = encode_decode(simple_tensor, representation)
+    target = torch.tensor([[-1, -1, -1], [1, 1, 1]]).to(decoded)
+    ir = torch.tensor([[0, 0, 0], [1, 1, 1]]).to(torch.uint8)
+    assert torch.equal(encoded, ir)
+    assert torch.equal(decoded, target)
 
 
 def test_scaled_binary(simple_tensor) -> None:
-    pass
+    representation = FyM.ScaledBinaryRepresentation()
+    encoded, decoded = encode_decode(simple_tensor, representation)
+    target = torch.tensor([[-2, -2, -2], [2, 2, 2]]).to(decoded)
+    ir = torch.tensor([[0, 0, 0], [1, 1, 1]]).to(torch.uint8)
+    assert torch.equal(encoded, ir)
+    assert torch.equal(decoded, target)
+
+
+def test_fixed_point_negativerange(caplog) -> None:
+    with caplog.at_level(logging.INFO):
+        representation = FyM.FixedPointRepresentation()
+        representation.adjust_fixed_point(mini=-129, maxi=0)
+        assert "Saturated range" in caplog.text
+
+
+def test_fixed_point_positiverange(caplog) -> None:
+    with caplog.at_level(logging.INFO):
+        representation = FyM.FixedPointRepresentation()
+        representation.adjust_fixed_point(mini=0, maxi=128)
+        assert "Saturated range" in caplog.text
+
+
+def test_fixed_point_range(caplog) -> None:
+    with caplog.at_level(logging.INFO):
+        representation = FyM.FixedPointRepresentation()
+        representation.adjust_fixed_point(mini=-128, maxi=127)
+        assert "Saturated range" in caplog.text
+
+
+def test_fixed_point_floating_range(caplog) -> None:
+    with caplog.at_level(logging.INFO):
+        representation = FyM.FixedPointRepresentation()
+        representation.adjust_fixed_point(mini=-64.5, maxi=63.5)
+        assert "Saturated range" not in caplog.text
 
 
 def test_fixed_point(simple_tensor) -> None:
-    pass
+    representation = FyM.ScaledBinaryRepresentation()
+    encoded, decoded = encode_decode(simple_tensor, representation)
+    target = torch.tensor([[-2, -2, -2], [2, 2, 2]]).to(decoded)
+    ir = torch.tensor([[0, 0, 0], [1, 1, 1]]).to(torch.uint8)
+    assert torch.equal(encoded, ir)
+    assert torch.equal(decoded, target)
 
 
 def test_ufixed_point(simple_tensor) -> None:

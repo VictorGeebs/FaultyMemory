@@ -142,12 +142,12 @@ class ScaledBinaryRepresentation(DigitalRepresentation):
 
     def encode(self, tensor: torch.Tensor) -> torch.Tensor:
         self.save_attributes(tensor)
-        self.mean = torch.mean(torch.abs(tensor))
-        tensor = torch.sign(tensor) + 2 - 1
+        self.mean = torch.mean(torch.abs(tensor)).item()
+        tensor = (torch.sign(tensor) + 1) / 2
         return tensor.to(torch.uint8)
 
     def decode(self, tensor: torch.Tensor) -> torch.Tensor:
-        return self.load_attributes(((tensor * 2) - 1) * self.mean)
+        return self.load_attributes(((tensor.to(torch.float32) * 2) - 1) * self.mean)
 
 
 @add_repr
@@ -166,12 +166,13 @@ class FixedPointRepresentation(DigitalRepresentation):
             self.adjust_fixed_point(mini=-3, maxi=3)
 
     def adjust_fixed_point(self, mini: float, maxi: float) -> None:
-        greatest = max(-mini, maxi)
+        assert maxi > mini, 'Maxi should be sup. to mini'
+        greatest = max(math.floor(abs(mini)), math.floor(abs(maxi)))
         whole = max(math.ceil(math.log(2 * greatest, 2)), 0)
         self.nb_integer = min(whole, self.width)
         self.nb_digits = max(self.width - self.nb_integer, 0)
         if self.nb_digits == 0:
-            print("Saturated range")
+            logging.info("Saturated range")
 
     @property
     def resolution(self):
