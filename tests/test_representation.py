@@ -25,7 +25,7 @@ def floating_tensor() -> torch.Tensor:
     Returns:
         torch.Tensor: tensor of symmetric values around 0 from 0 to 1 (2x3) format
     """
-    return torch.tensor([[-1.0, -.5, -.33], [1.0, .5, .33]]).to(device)
+    return torch.tensor([[-1.0, -0.5, -0.33], [1.0, 0.5, 0.33]]).to(device)
 
 
 def encode_decode(tensor: torch.Tensor, representation: FyM.Representation):

@@ -166,7 +166,7 @@ class FixedPointRepresentation(DigitalRepresentation):
             self.adjust_fixed_point(mini=-3, maxi=3)
 
     def adjust_fixed_point(self, mini: float, maxi: float) -> None:
-        assert maxi > mini, 'Maxi should be sup. to mini'
+        assert maxi > mini, "Maxi should be sup. to mini"
         greatest = max(math.floor(abs(mini)), math.floor(abs(maxi)))
         whole = max(math.ceil(math.log(2 * greatest, 2)), 0)
         self.nb_integer = min(whole, self.width)
