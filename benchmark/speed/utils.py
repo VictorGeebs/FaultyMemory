@@ -1,6 +1,7 @@
 import sys
 from timeit import default_timer as timer
 
+
 def timefunc(func, *args, **kwargs):
     """Time a function.
 
@@ -11,7 +12,7 @@ def timefunc(func, *args, **kwargs):
         timeit(myfunc, 1, b=2)
     """
     try:
-        iterations = kwargs.pop('iterations')
+        iterations = kwargs.pop("iterations")
     except KeyError:
         iterations = 3
     elapsed = sys.maxsize
@@ -19,5 +20,5 @@ def timefunc(func, *args, **kwargs):
         start = timer()
         result = func(*args, **kwargs)
         elapsed = min(timer() - start, elapsed)
-    print(('Best of {} {}(): {:.9f}'.format(iterations, func.__name__, elapsed)))
+    print(("Best of {} {}(): {:.9f}".format(iterations, func.__name__, elapsed)))
     return result
