@@ -3,7 +3,6 @@ tests/job.sh
 profiles/extra.txt
 .vscode/*
 data/*
-*/__pycache__/*
 *.pth
 *.egg*
 outputs/*
@@ -11,3 +10,5 @@ outputs/*
 .*_cache
 .coverage
 .venv
+*/__pycache__/*
+__pycache__
