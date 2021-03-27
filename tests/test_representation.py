@@ -25,7 +25,17 @@ def floating_tensor() -> torch.Tensor:
     Returns:
         torch.Tensor: tensor of symmetric values around 0 from 0 to 1 (2x3) format
     """
-    return torch.tensor([[-1.0, -0.5, -0.33], [1.0, 0.5, 0.33]]).to(device)
+    return torch.tensor([[-1.0, -0.5, -0.499999], [1.0, 0.5, 0.499999]]).to(device)
+
+
+@pytest.fixture
+def large_tensor() -> torch.Tensor:
+    """A simple 2 dimensional tensor put on device
+
+    Returns:
+        torch.Tensor: tensor of symmetric values around 0 from 3 to 256 in (2x3) format
+    """
+    return torch.tensor([[-3.0, -128.0, -256.0], [3.0, 128.0, 256.0]]).to(device)
 
 
 def encode_decode(tensor: torch.Tensor, representation: FyM.Representation):
@@ -86,29 +96,55 @@ def test_fixed_point_floating_range(caplog) -> None:
         assert "Saturated range" not in caplog.text
 
 
-def test_fixed_point(simple_tensor) -> None:
-    representation = FyM.ScaledBinaryRepresentation()
-    encoded, decoded = encode_decode(simple_tensor, representation)
-    target = torch.tensor([[-2, -2, -2], [2, 2, 2]]).to(decoded)
-    ir = torch.tensor([[0, 0, 0], [1, 1, 1]]).to(torch.uint8)
+@pytest.mark.parametrize("type_repr", ['FixedPoint', 'SlowFixedPoint'])
+def test_fixed_point(floating_tensor, type_repr) -> None:
+    representation = getattr(FyM, f'{type_repr}Representation')()
+    encoded, decoded = encode_decode(floating_tensor, representation)
+    target = torch.tensor([[-1, -.5, -.5], [1, .5, .5]]).to(decoded)
+    ir = torch.tensor([[224, 240, 240], [32, 16, 16]]).to(torch.uint8)
     assert torch.equal(encoded, ir)
     assert torch.equal(decoded, target)
 
 
-def test_ufixed_point(simple_tensor) -> None:
-    pass
+@pytest.mark.parametrize("type_repr", ['FixedPoint', 'SlowFixedPoint'])
+def test_fixed_point_saturated(large_tensor, type_repr) -> None:
+    representation = getattr(FyM, f'{type_repr}Representation')()
+    encoded, decoded = encode_decode(large_tensor, representation)
+    target = torch.tensor([[-3, -4, -4], [3, 3.96875, 3.96875]]).to(decoded)
+    ir = torch.tensor([[160, 128, 128], [96, 127, 127]]).to(torch.uint8)
+    assert torch.equal(encoded, ir)
+    assert torch.equal(decoded, target)
+
+@pytest.mark.parametrize("type_repr", ['FixedPoint', 'SlowFixedPoint'])
+def test_ufixed_point(floating_tensor, type_repr) -> None:
+    representation = getattr(FyM, f'U{type_repr}Representation')()
+    encoded, decoded = encode_decode(floating_tensor, representation)
+    target = torch.tensor([[0, 0, 0], [1, .5, .5]]).to(decoded)
+    ir = torch.tensor([[0, 0, 0], [32, 16, 16]]).to(torch.uint8)
+    assert torch.equal(encoded, ir)
+    assert torch.equal(decoded, target)
 
 
-def test_slowfixed_point(simple_tensor) -> None:
-    pass
-
-
-def test_uslowfixed_point(simple_tensor) -> None:
-    pass
+@pytest.mark.parametrize("type_repr", ['FixedPoint', 'SlowFixedPoint'])
+def test_ufixed_point_saturated(large_tensor, type_repr) -> None:
+    representation = getattr(FyM, f'U{type_repr}Representation')()
+    encoded, decoded = encode_decode(large_tensor, representation)
+    target = torch.tensor([[0, 0, 0], [3, 7.96875, 7.96875]]).to(decoded)
+    ir = torch.tensor([[0, 0, 0], [96, 255, 255]]).to(torch.uint8)
+    assert torch.equal(encoded, ir)
+    assert torch.equal(decoded, target)
 
 
 def test_clustered(simple_tensor) -> None:
-    pass
+    import numpy as np
+    np.random.seed(0)  # Ensure reproducibility
+    [[-1.0, -2.0, -3.0], [1.0, 2.0, 3.0]]
+    representation = FyM.ClusteredRepresentation(num_cluster=2)
+    encoded, decoded = encode_decode(simple_tensor, representation)
+    target = torch.tensor([[-2, -2, -2], [2, 2, 2]]).to(decoded)
+    ir = torch.tensor([[1, 1, 1], [0, 0, 0]]).to(torch.uint8)
+    assert torch.equal(encoded, ir)
+    assert torch.equal(decoded, target)
 
 
 def test_distinct_reference(simple_tensor) -> None:

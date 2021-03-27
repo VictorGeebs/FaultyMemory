@@ -228,3 +228,8 @@ def kmeans_nparray(np_array: np.array, nb_clusters: int) -> np.array:
     codebook, _ = kmeans(whitened, nb_clusters)
     encoded, _ = vq(np_array, codebook)
     return np.array([codebook[i] for i in encoded])
+
+
+@torch.jit.script
+def twos_compl(tensor: torch.Tensor) -> torch.Tensor:
+    return torch.bitwise_not(tensor.abs()) + 1

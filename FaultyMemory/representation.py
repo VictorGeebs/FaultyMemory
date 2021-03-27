@@ -7,6 +7,7 @@ They at least expose two methods: encode and decode
 Encode returns a tensor in uint8 format
 Decode takes a tensor in uint8 format
 """
+from FaultyMemory.utils import twos_compl
 import math
 import numpy as np
 import torch
@@ -63,6 +64,9 @@ class Representation(ABC):
     @abstractclassmethod
     def decode(self, tensor: torch.Tensor) -> torch.Tensor:
         r""" By convention, do not return the same tensor as is"""
+
+    def quantize(self, tensor: torch.Tensor) -> torch.Tensor:
+        return self.decode(self.encode(tensor))
 
     def save_attributes(self, tensor: torch.Tensor) -> None:
         self._target_device = tensor.device
@@ -219,12 +223,17 @@ class SlowFixedPointRepresentation(FixedPointRepresentation):
         self.save_attributes(tensor)
         tensor = self.clamp_and_shift(tensor)
         tensor = torch.where(
-            tensor < 0, torch.bitwise_not(tensor.abs()) + 1, tensor
+            tensor < 0, twos_compl(tensor), tensor
         )  # 2s compl
         return tensor.to(torch.uint8)
 
     def decode(self, tensor: torch.Tensor) -> torch.Tensor:
-        return self.load_attributes(self.min_repr + self.resolution * tensor)
+        tensor = self.load_attributes(tensor)
+        tensor_dec = tensor * self.resolution
+        tensor = torch.where(tensor >= 2**(self.width - 1),
+                             tensor_dec - 2**(self.nb_integer),
+                             tensor_dec)
+        return tensor
 
 
 # TODO not sure it works. Nice not to repeat same code though if it does.
@@ -236,6 +245,10 @@ class USlowFixedPointRepresentation(
         self.save_attributes(tensor)
         tensor = self.clamp_and_shift(tensor)
         return tensor.to(torch.uint8)
+
+    def decode(self, tensor: torch.Tensor) -> torch.Tensor:
+        tensor = self.load_attributes(tensor)
+        return tensor * self.resolution
 
 
 @add_repr
@@ -251,11 +264,11 @@ class ClusteredRepresentation(DigitalRepresentation):
     def encode(self, tensor: torch.Tensor) -> torch.Tensor:
         self.save_attributes(tensor)
         # TODO pure pytorch impl of kmeans (avoid round trip to cpu)
-        from scipy.cluster.vq import vq, kmeans, whiten
+        from scipy.cluster.vq import vq, kmeans
 
-        whitened = whiten(tensor.clone().cpu().flatten().numpy())
-        self.codebook, _ = kmeans(whitened, 2 ** self.width)
-        cluster, _ = vq(whitened, self.codebook)
+        tensor = tensor.clone().cpu().flatten().numpy()
+        self.codebook, _ = kmeans(tensor, 2 ** self.width)
+        cluster, _ = vq(tensor, self.codebook)
         return (
             torch.tensor(cluster)
             .view(self._target_shape)
