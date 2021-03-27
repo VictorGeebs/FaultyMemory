@@ -222,17 +222,17 @@ class SlowFixedPointRepresentation(FixedPointRepresentation):
     def encode(self, tensor: torch.Tensor) -> torch.Tensor:
         self.save_attributes(tensor)
         tensor = self.clamp_and_shift(tensor)
-        tensor = torch.where(
-            tensor < 0, twos_compl(tensor), tensor
-        )  # 2s compl
+        tensor = torch.where(tensor < 0, twos_compl(tensor), tensor)  # 2s compl
         return tensor.to(torch.uint8)
 
     def decode(self, tensor: torch.Tensor) -> torch.Tensor:
         tensor = self.load_attributes(tensor)
         tensor_dec = tensor * self.resolution
-        tensor = torch.where(tensor >= 2**(self.width - 1),
-                             tensor_dec - 2**(self.nb_integer),
-                             tensor_dec)
+        tensor = torch.where(
+            tensor >= 2 ** (self.width - 1),
+            tensor_dec - 2 ** (self.nb_integer),
+            tensor_dec,
+        )
         return tensor
 
 
