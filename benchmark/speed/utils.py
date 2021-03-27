@@ -24,9 +24,10 @@ def timefunc(func, *args, **kwargs):
     print(("Best of {} {}(): {:.9f}".format(iterations, func.__name__, elapsed)))
     return result
 
+
 def profile(func):
     timefunc(func, iterations=5)
     p = cProfile.Profile()
     p.runcall(func)
-    p.print_stats(sort='tottime')
+    p.print_stats(sort="tottime")
     return func
