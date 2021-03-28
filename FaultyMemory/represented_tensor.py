@@ -273,6 +273,7 @@ class RepresentedParameter(RepresentedTensor):
 
     def quantize_perturb(self) -> None:
         super().quantize_perturb()
+        self.save()
         self.default_exec_callback_stack()
 
 

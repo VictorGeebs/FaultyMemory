@@ -65,7 +65,7 @@ class Representation(ABC):
     def decode(self, tensor: torch.Tensor) -> torch.Tensor:
         r""" By convention, do not return the same tensor as is"""
 
-    def quantize(self, tensor: torch.Tensor) -> torch.Tensor:
+    def quantize(self, tensor: torch.Tensor) -> torch.Tensor:  # pragma: no cover
         return self.decode(self.encode(tensor))
 
     def save_attributes(self, tensor: torch.Tensor) -> None:
