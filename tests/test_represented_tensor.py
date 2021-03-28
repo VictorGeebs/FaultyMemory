@@ -45,7 +45,7 @@ def test_represented_weight_safe(simple_module):
     shorthand = simple_module.feature.weight.data
     mask = (shorthand == 1) | (shorthand == -1)
     assert mask.sum() == torch.numel(shorthand)
-    assert rp.tensor_stats['bitcount'] == torch.numel(shorthand)
+    assert rp.tensor_stats["bitcount"] == torch.numel(shorthand)
     rp.restore()
     assert torch.equal(simple_module.feature.weight, ref)
 
@@ -58,7 +58,7 @@ def test_represented_activation_safe(simple_module, simple_tensor):
     assert not torch.equal(out, out_pert)
     mask = (out_pert == 1) | (out_pert == -1)
     assert mask.sum() == torch.numel(out_pert)
-    assert ra.tensor_stats['bitcount'] == torch.numel(out_pert) / 64
+    assert ra.tensor_stats["bitcount"] == torch.numel(out_pert) / 64
     ra.__del__()  # del ra do not delete immediately
     out_init = simple_module(simple_tensor)
     assert torch.equal(out_init, out)
