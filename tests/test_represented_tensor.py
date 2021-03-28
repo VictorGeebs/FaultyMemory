@@ -1,6 +1,7 @@
 """Tests for representation.py."""
 
 import copy
+
 import FaultyMemory as FyM
 import torch
 import pytest
@@ -35,11 +36,14 @@ def simple_module() -> torch.nn.Module():
     return SimpleModule()
 
 
-def test_represented_weight_safe(simple_module, simple_tensor):
+def test_represented_weight_safe(simple_module):
     rp = FyM.RepresentedParameter(simple_module, 'feature.weight', representation)
-    ref = copy.deepcopy(simple_module.feature)
+    ref = copy.deepcopy(simple_module.feature.weight)
     rp.quantize_perturb()
-    assert not torch.equal(ref.weight, simple_module.feature.weight)
+    assert not torch.equal(ref, simple_module.feature.weight)
+    shorthand = simple_module.feature.weight.data
+    mask = (shorthand == 1) | (shorthand == -1)
+    assert mask.sum() == torch.numel(shorthand)
 
 
 def test_represented_activation_safe(simple_module, simple_tensor):
@@ -48,3 +52,5 @@ def test_represented_activation_safe(simple_module, simple_tensor):
     ra.quantize_perturb()
     out_pert = simple_module(simple_tensor)
     assert not torch.equal(out, out_pert)
+    mask = (out_pert == 1) | (out_pert == -1)
+    assert mask.sum() == torch.numel(out_pert)

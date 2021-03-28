@@ -129,7 +129,8 @@ class RepresentedTensor(ABC):
             print(f"The callback {name} is not registered")
 
     def to_repr(self, x) -> None:
-        # TODO pre-compute the fault mask with bitwise ops so as not to create dependicies in the comp. graph on encoded and achieve potential speed-ups
+        # TODO pre-compute the fault mask with bitwise ops so as not to create dependicies in the comp.
+        # graph on encoded and achieve potential speed-ups
         encoded = self.repr.encode(x)
         if self._perturb:
             encoded = self.apply_perturb_to_encoded(encoded)
@@ -320,7 +321,6 @@ class RepresentedModule_(RepresentedTensor):
     r"""Replace a module with a represented one
     TODO the goal is to not be seamless, i.e. the network definition changes
     """
-    pass
 
 
 def construct_type(model: nn.Module, type_dict: dict):
