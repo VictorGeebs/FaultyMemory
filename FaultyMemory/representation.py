@@ -225,7 +225,6 @@ class SlowFixedPointRepresentation(FixedPointRepresentation):
         return tensor
 
 
-
 @add_repr
 class UFixedPointRepresentation(SlowFixedPointRepresentation):
     @property
