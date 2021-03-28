@@ -199,17 +199,6 @@ class FixedPointRepresentation(DigitalRepresentation):
 
 
 @add_repr
-class UFixedPointRepresentation(FixedPointRepresentation):
-    @property
-    def max_repr(self):
-        return 2 ** self.nb_integer - self.resolution
-
-    @property
-    def min_repr(self):
-        return 0
-
-
-@add_repr
 class SlowFixedPointRepresentation(FixedPointRepresentation):
     "Pure Pytorch Python API FP Representation"
 
@@ -236,11 +225,17 @@ class SlowFixedPointRepresentation(FixedPointRepresentation):
         return tensor
 
 
-# TODO not sure it works. Nice not to repeat same code though if it does.
+
 @add_repr
-class USlowFixedPointRepresentation(
-    SlowFixedPointRepresentation, UFixedPointRepresentation
-):
+class UFixedPointRepresentation(SlowFixedPointRepresentation):
+    @property
+    def max_repr(self):
+        return 2 ** self.nb_integer - self.resolution
+
+    @property
+    def min_repr(self):
+        return 0
+
     def encode(self, tensor: torch.Tensor) -> torch.Tensor:
         self.save_attributes(tensor)
         tensor = self.clamp_and_shift(tensor)

@@ -10,6 +10,7 @@ from tabulate import tabulate
 import numpy as np
 import torch
 import torch.nn as nn
+import inspect
 from abc import ABC, abstractclassmethod
 
 import copy
@@ -32,19 +33,19 @@ class RepresentedTensor(ABC):
         self,
         model: nn.Module,
         name: str,
-        repr: Representation,
-        pert: Optional[Union[dict, Perturbator]] = {},
+        representation: Representation,
+        pert: Optional[Union[dict, Perturbator]] = None,
     ) -> None:
         self.name = name
         self._perturb = True
-        self.repr = copy.deepcopy(repr)
+        self.repr = copy.deepcopy(representation)
         self.pert = dictify(pert)
         self.model = model
+        self.callbacks = {}
         ten_exists(self.where_ten(), name)
         self.compute_bitcount()
         self.saved_ten = None
         self.tensor_stats = {}
-        self.callbacks = {}
 
     def __str__(self) -> str:
         string = f"{self.repr} tensor \n"
@@ -60,12 +61,12 @@ class RepresentedTensor(ABC):
         return string
 
     @classmethod
-    def from_dict(cls, dict: dict, model: nn.Module):
+    def from_dict(cls, _dict: dict, model: nn.Module):
         return cls(
             model,
-            dict["name"],
-            construct_repr(dict["repr"]),
-            {pert["name"]: construct_pert(pert) for pert in dict["pert"]},
+            _dict["name"],
+            construct_repr(_dict["repr"]),
+            {pert["name"]: construct_pert(pert) for pert in _dict["pert"]},
         )
 
     def access_ten(self):
@@ -92,15 +93,16 @@ class RepresentedTensor(ABC):
         # TODO an assert that the tensor is not changed apart when priority == 0
         # TODO a parameter to control if all the callbacks needs to be executed ? e.g. only pre to_repr
         for name, callback in sorted(
-            self.callbacks.items(), key=lambda x: self.callbacks[x]["priority"]
+            self.callbacks.items(), key=lambda x: x[1]["priority"]
         ):
-            callback["func"](tensor)
+            callback["func"](self, tensor)
             if callback["autoremove"]:
                 del self.callbacks[name]
 
     def register_callback(
         self, callback: Callable, name: str, priority: float, autoremove: bool = False
     ) -> None:
+        assert len(inspect.signature(callback).parameters) == 2, "A callback has a signature (self, tensor)"
         self.callbacks[name] = {
             "priority": priority,
             "func": callback,
@@ -131,7 +133,7 @@ class RepresentedTensor(ABC):
         encoded = self.repr.encode(x)
         if self._perturb:
             encoded = self.apply_perturb_to_encoded(encoded)
-        return self.repr.decode(encoded).to(x.dtype)
+        return self.repr.decode(encoded)
 
     def apply_perturb_to_encoded(self, base) -> torch.Tensor:
         for _, pert in self.pert.items():
@@ -190,11 +192,11 @@ class RepresentedTensor(ABC):
             self.tensor_stats["bitcount"] * current_consumption,
         )
 
-    def quantize_MSE(self) -> None:
+    def quantize_mse(self) -> None:
         r"""Computes the Mean Squared Error between an original tensor and its quantized version
         TODO quantify the impact of data movs. Maybe let saved_ten stay on device at first ?
         """
-        if self.saved_ten is None and not "save_tensor" in self.callbacks:
+        if self.saved_ten is None and "save_tensor" not in self.callbacks:
             self.save()
 
         def func(self, output) -> None:
@@ -232,10 +234,10 @@ class RepresentedTensor(ABC):
         TODO generalize to repr others than fixed point
         """
         if (
-            not "MAX" in self.tensor_stats.keys()
-            and not "MIN" in self.tensor_stats.keys()
-            and not "ValueRange" in self.callbacks
-            and not "DynamicValueRange" in self.callbacks
+            "MAX" not in self.tensor_stats.keys()
+            and "MIN" not in self.tensor_stats.keys()
+            and "ValueRange" not in self.callbacks
+            and "DynamicValueRange" not in self.callbacks
         ):
             print(
                 "Tensors statistics have yet to be computed, auto-attaching the `value_range` callback"
@@ -279,10 +281,10 @@ class RepresentedActivation(RepresentedTensor):
         self,
         model: nn.Module,
         name: str,
-        repr: Representation,
-        pert: Optional[Union[dict, Perturbator]],
+        representation: Representation,
+        pert: Optional[Union[dict, Perturbator]] = None,
     ) -> None:
-        super().__init__(model, name, repr, pert=pert)
+        super().__init__(model, name, representation, pert=pert)
         self.hook = self.access_ten().register_forward_hook(
             self.exec_callbacks_stack_act
         )
@@ -291,7 +293,7 @@ class RepresentedActivation(RepresentedTensor):
         self.exec_callbacks_stack(output)
 
     def where_ten(self) -> dict:
-        return self.model.named_modules()
+        return dict(self.model.named_modules())
 
     def default_exec_callback_stack(self) -> None:
         pass
@@ -312,7 +314,6 @@ class RepresentedActivation(RepresentedTensor):
 
     def __del__(self):
         self.hook.remove()
-        super().__del__()
 
 
 class RepresentedModule_(RepresentedTensor):
