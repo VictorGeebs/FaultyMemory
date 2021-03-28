@@ -38,7 +38,7 @@ def simple_module() -> torch.nn.Module():
 
 
 def test_represented_weight_safe(simple_module):
-    rp = FyM.RepresentedParameter(simple_module, 'feature.weight', representation)
+    rp = FyM.RepresentedParameter(simple_module, "feature.weight", representation)
     ref = copy.deepcopy(simple_module.feature.weight)
     rp.quantize_perturb()
     assert not torch.equal(ref, simple_module.feature.weight)
