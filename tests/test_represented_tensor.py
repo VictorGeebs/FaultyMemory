@@ -32,18 +32,19 @@ def simple_module() -> torch.nn.Module():
 
         def forward(self, x):
             return self.feature(x)
+
     return SimpleModule()
 
 
 def test_represented_weight_safe(simple_module, simple_tensor):
-    rp = FyM.RepresentedParameter(simple_module, 'feature.weight', representation)
+    rp = FyM.RepresentedParameter(simple_module, "feature.weight", representation)
     ref = copy.deepcopy(simple_module.feature)
     rp.quantize_perturb()
     assert not torch.equal(ref.weight, simple_module.feature.weight)
 
 
 def test_represented_activation_safe(simple_module, simple_tensor):
-    ra = FyM.RepresentedActivation(simple_module, 'feature', representation)
+    ra = FyM.RepresentedActivation(simple_module, "feature", representation)
     out = simple_module(simple_tensor)
     ra.quantize_perturb()
     out_pert = simple_module(simple_tensor)

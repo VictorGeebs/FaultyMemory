@@ -102,7 +102,9 @@ class RepresentedTensor(ABC):
     def register_callback(
         self, callback: Callable, name: str, priority: float, autoremove: bool = False
     ) -> None:
-        assert len(inspect.signature(callback).parameters) == 2, "A callback has a signature (self, tensor)"
+        assert (
+            len(inspect.signature(callback).parameters) == 2
+        ), "A callback has a signature (self, tensor)"
         self.callbacks[name] = {
             "priority": priority,
             "func": callback,
