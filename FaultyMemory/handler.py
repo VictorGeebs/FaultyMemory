@@ -1,4 +1,5 @@
 import json
+import torch
 
 from tabulate import tabulate
 
