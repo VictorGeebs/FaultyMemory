@@ -13,21 +13,21 @@ from FaultyMemory.represented_tensor import (
 )
 from FaultyMemory.utils import ten_exists
 
-from typing import List, Tuple, Union, Optional, Dict
+from typing import Tuple, Union, Optional, Dict
 
 
-class Handler(object):
+class Handler():
     r"""
     Class in charge of saving tensors, storing information about them,
     activation perturbations and clusters.
     """
 
-    def __init__(self, net, clusters=None):
+    def __init__(self, net, clusters: Optional[int] = 0):
         self.net = net
         self.represented_ten = {}
-        self.clusters = Cluster()
+        self.clusters = Cluster(clusters)
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         print("Handler: ")
         for ten in self.represented_ten:
             print(ten)
@@ -61,7 +61,7 @@ class Handler(object):
             for _, represented_ten in self.represented_ten.items()
         ]
 
-    def compute_MSE(self) -> None:
+    def compute_mse(self) -> None:
         [
             represented_ten.quantize_MSE()
             for _, represented_ten in self.represented_ten.items()
