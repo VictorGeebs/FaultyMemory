@@ -112,12 +112,6 @@ def test_represented_metrics(scalar_module, scalar_tensor):
     assert out_pert != out
     assert pytest.approx(rp.energy_consumption()[1], 1e-3) == 1.1
 
-<<<<<<< HEAD
-    #TODO conso test if perturbation is scalar
-
-    #TODO conso test if there is not perturbation
-=======
     # TODO test if perturbation is scalar
 
     # TODO test if there is not perturbation
->>>>>>> 299bc874c92a42d8bf6772d30d609f18dc94e1c1
