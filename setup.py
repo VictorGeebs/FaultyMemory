@@ -12,5 +12,5 @@ setup(
     license=FaultyMemory.__license__,
     keywords=["deep learning", "pytorch", "AI", "hardware emulation"],
     python_requires=">=3.6",
-    packages=find_packages(where='./FaultyMemory'),
+    packages=find_packages(where="./FaultyMemory"),
 )

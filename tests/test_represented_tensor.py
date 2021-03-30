@@ -27,7 +27,7 @@ def scalar_module() -> torch.nn.Module:
     class SimpleModule(torch.nn.Module):
         def __init__(self):
             super().__init__()
-            self.feature = torch.nn.Linear(1,1,False)
+            self.feature = torch.nn.Linear(1, 1, False)
             self.feature.weight.zero_().add_(2)
 
         def forward(self, x):
