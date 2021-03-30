@@ -272,7 +272,14 @@ class RepresentedTensor(ABC):
 @add_type
 class RepresentedParameter(RepresentedTensor):
     r"""Seamlessly cast a parameter tensor to faulty hardware"""
-    def __init__(self, model: nn.Module, name: str, representation: Representation, pert: Optional[Union[dict, Perturbator]] = None) -> None:
+
+    def __init__(
+        self,
+        model: nn.Module,
+        name: str,
+        representation: Representation,
+        pert: Optional[Union[dict, Perturbator]] = None,
+    ) -> None:
         super().__init__(model, name, representation, pert=pert)
         self.default_exec_callback_stack()
 

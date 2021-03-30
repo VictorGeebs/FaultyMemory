@@ -12,7 +12,7 @@ torch.manual_seed(0)
 representation = FyM.BinaryRepresentation()
 
 u_representation = FyM.UFixedPointRepresentation(width=3, nb_digits=0)
-perturbation = FyM.BernoulliXORPerturbation(probs=torch.Tensor([1., 0.278037, 0.]))
+perturbation = FyM.BernoulliXORPerturbation(probs=torch.Tensor([1.0, 0.278037, 0.0]))
 
 
 @pytest.fixture
@@ -101,7 +101,9 @@ def test_represented_activation_safe(simple_module, simple_tensor):
 
 
 def test_represented_metrics(scalar_module, scalar_tensor):
-    rp = FyM.RepresentedParameter(scalar_module, "feature.weight", u_representation, perturbation)
+    rp = FyM.RepresentedParameter(
+        scalar_module, "feature.weight", u_representation, perturbation
+    )
     out = scalar_module(scalar_tensor)
     assert out == 2
     rp.quantize_perturb()
@@ -110,6 +112,12 @@ def test_represented_metrics(scalar_module, scalar_tensor):
     assert out_pert != out
     assert pytest.approx(rp.energy_consumption()[1], 1e-3) == 1.1
 
+<<<<<<< HEAD
     #TODO conso test if perturbation is scalar
 
     #TODO conso test if there is not perturbation
+=======
+    # TODO test if perturbation is scalar
+
+    # TODO test if there is not perturbation
+>>>>>>> 299bc874c92a42d8bf6772d30d609f18dc94e1c1
