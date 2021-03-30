@@ -30,7 +30,7 @@ def load_requirements(
         if comment_char in ln:
             ln = ln[: ln.index(comment_char)].strip()
         # skip directly installed dependencies
-        if ln.startswith("http") or ln.startswith("-r"):
+        if ln.startswith("http"):
             continue
         if ln:  # if requirement is not empty
             reqs.append(ln)
