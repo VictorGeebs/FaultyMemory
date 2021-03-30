@@ -15,7 +15,7 @@ class Cluster(object):
     """
 
     def __init__(self, nb_clusters: int = 0):
-        self.pert = None  # TODO assign_perts here
+        self.pert = set()
         self.change_nb_clusters(nb_clusters)
 
     def __str__(self):
@@ -31,7 +31,7 @@ class Cluster(object):
             self.cluster()
 
     def assign_perts(self, perturbations: List[Perturbator]):
-        self.pert = perturbations
+        self.pert.update(perturbations)
         self.ref_params = torch.stack(
             [pert.distribution._param.view(-1) for pert in self.pert]
         )
@@ -42,7 +42,7 @@ class Cluster(object):
         Args:
             cluster_func: a callable taking two args: a numpy array (1d) and the number of clusters, returns a numpy array (1d)
         """
-        if not self.pert:
+        if len(self.pert) == 0:
             raise ValueError("Tried to cluster with no assigned perturbations")
         if self.nb_clusters == 0:
             return
