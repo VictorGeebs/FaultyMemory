@@ -32,6 +32,7 @@ def scalar_module() -> torch.nn.Module:
 
         def forward(self, x):
             return self.feature(x)
+
     return SimpleModule()
 
 

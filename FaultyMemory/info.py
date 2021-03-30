@@ -5,7 +5,7 @@ __version__ = "0.0.1"
 __author__ = "Victor Gaudreau-Blouin, Sébastien Henwood"
 __author_email__ = "noreply@polymtl.ca"
 __license__ = "Apache-2.0"
-__copyright__ = f'Copyright (c) 2020-{time.strftime("%Y")}, {__author__}.' 
+__copyright__ = f'Copyright (c) 2020-{time.strftime("%Y")}, {__author__}.'
 __homepage__ = "https://github.com/VictorGeebs/FaultyMemory"
 
 __docs__ = "FaultyMemory is a lightweight wrapper to simulate the effect of hardware architecture on Pytorch models."

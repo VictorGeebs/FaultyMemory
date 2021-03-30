@@ -17,4 +17,4 @@ from .representation import *  # noqa: E402 F401
 from .represented_tensor import *  # noqa: E402 F401
 from .utils import *  # noqa: E402 F401
 
-__import__('pkg_resources').declare_namespace(__name__)
+__import__("pkg_resources").declare_namespace(__name__)
