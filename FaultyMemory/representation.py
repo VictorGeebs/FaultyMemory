@@ -56,7 +56,7 @@ class Representation(ABC):
             if self.width > 1:
                 other.width_correction = self.width
         else:
-            raise ValueError('Perturbator width should be an integer greather than 0')
+            raise ValueError("Perturbator width should be an integer greather than 0")
         return self.__COMPAT__ in other.repr_compatibility and width_check
 
     @abstractclassmethod

@@ -139,16 +139,16 @@ class Handler:
         # 2b - Pick pert
         pass
 
-    def parallel_evaluate(self,
-                          repeat: int,
-                          tensor: torch.Tensor,
-                          loss: torch.nn.Module,
-                          num_workers=4) -> float:
+    def parallel_evaluate(
+        self, repeat: int, tensor: torch.Tensor, loss: torch.nn.Module, num_workers=4
+    ) -> float:
         r"""Massively parallelize a neural network for evaluation of the `tensor` on multiple CPU cores.
         TODO: also use GPU if available
         """
-        self.net.to('cpu')
-        assert num_workers <= mp.cpu_count(), 'Cannot instantiate more workers than CPU cores (I guess it would be useless?)'
+        self.net.to("cpu")
+        assert (
+            num_workers <= mp.cpu_count()
+        ), "Cannot instantiate more workers than CPU cores (I guess it would be useless?)"
         with mp.Pool(num_workers) as p:
             res = [p.apply_async(self.forward, tensor, False) for _ in range(repeat)]
         res = [loss(r) for r in res]
@@ -210,7 +210,10 @@ class Handler:
         ]
 
     def remove_net_parameters(self) -> None:
-        _ = [self.remove_tensor(param_key) for param_key, _ in self.net.named_parameters()]
+        _ = [
+            self.remove_tensor(param_key)
+            for param_key, _ in self.net.named_parameters()
+        ]
 
     def add_net_activations(
         self,
