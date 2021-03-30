@@ -16,7 +16,7 @@ from FaultyMemory.utils import ten_exists
 from typing import Tuple, Union, Optional, Dict
 
 
-class Handler():
+class Handler:
     r"""
     Class in charge of saving tensors, storing information about them,
     activation perturbations and clusters.
