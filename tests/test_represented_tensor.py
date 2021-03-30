@@ -32,6 +32,7 @@ def scalar_module() -> torch.nn.Module:
 
         def forward(self, x):
             return self.feature(x)
+    return SimpleModule()
 
 
 @pytest.fixture
@@ -47,6 +48,9 @@ def simple_module() -> torch.nn.Module:
             return self.feature(x)
 
     return SimpleModule()
+
+
+# TODO a module with 2 outputs and test acts
 
 
 def test_represented_weight_safe(simple_module):

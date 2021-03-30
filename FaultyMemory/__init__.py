@@ -1,22 +1,20 @@
 """Root package info."""
 
-__version__ = "0.0.1"
-__author__ = "Victor Gaudreau-Blouin, Sébastien Henwood"
-__author_email__ = "noreply@polymtl.ca"
-__license__ = "Apache-2.0"
-__copyright__ = "Copyright (c) 2020, %s." % __author__
-__homepage__ = "https://github.com/VictorGeebs/FaultyMemory"
+from FaultyMemory.info import (  # noqa: F401
+    __author__,
+    __author_email__,
+    __copyright__,
+    __docs__,
+    __homepage__,
+    __license__,
+    __version__,
+)
 
-__docs__ = "FaultyMemory is a lightweight wrapper to simulate the effect of hardware architecture on Pytorch models."
-__long_docs__ = """
-In real-world scenario a deep learning model may encounter unexpected bit-flips.
-FaultyMemory aims to brings painless fault-aware training by providing an easy-to-use wrapper that simulates the faults.
-The user can describe its model in terms of numerical representations (int, uint, binary, ...).
-"""
+from .handler import *  # noqa: E402 F401
+from .cluster import *  # noqa: E402 F401
+from .perturbator import *  # noqa: E402 F401
+from .representation import *  # noqa: E402 F401
+from .represented_tensor import *  # noqa: E402 F401
+from .utils import *  # noqa: E402 F401
 
-from .handler import *  # noqa: E402
-from .cluster import *  # noqa: E402
-from .perturbator import *  # noqa: E402
-from .representation import *  # noqa: E402
-from .represented_tensor import *  # noqa: E402
-from .utils import *  # noqa: E402
+__import__('pkg_resources').declare_namespace(__name__)

@@ -113,13 +113,13 @@ class Handler(object):
         # Pretty print results
         tabulate(zip(self.get_names(), ref, quant, pert), headers)
 
-    def value_range(self):
+    def value_range(self) -> None:
         [
             represented_ten.value_range()
             for _, represented_ten in self.represented_ten.items()
         ]
 
-    def assign_representation_range(self):
+    def assign_representation_range(self) -> None:
         [
             represented_ten.adjust_fixed_point()
             for _, represented_ten in self.represented_ten.items()
@@ -136,12 +136,18 @@ class Handler(object):
         # 2b - Pick pert
         pass
 
+    def parallel_evaluate(self, tensor: torch.Tensor) -> float:
+        r"""Massively parallelize a neural network for evaluation of the `tensor` on multiple CPU cores.
+        TODO: also use GPU if available
+        """
+        pass
+
     def add_parameter(
         self,
         name: str,
         representation: Representation,
         perturb: Optional[Union[Dict, Perturbator]] = None,
-    ):
+    ) -> None:
         assert name not in self.represented_ten
         self.represented_ten[name] = RepresentedParameter(
             self.net, name, representation, perturb
@@ -192,14 +198,14 @@ class Handler(object):
             for param_key, _ in self.net.named_parameters()
         ]
 
-    def remove_net_parameters(self):
+    def remove_net_parameters(self) -> None:
         [self.remove_tensor(param_key) for param_key, _ in self.net.named_parameters()]
 
     def add_net_activations(
         self,
         representation: Representation,
         perturb: Optional[Union[Dict, Perturbator]] = None,
-    ):
+    ) -> None:
         [
             self.add_activation(module, representation, perturb)
             for module, _ in self.net.named_modules()
