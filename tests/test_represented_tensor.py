@@ -11,6 +11,19 @@ torch.manual_seed(0)
 
 representation = FyM.BinaryRepresentation()
 
+u_representation = FyM.UFixedPointRepresentation(width=3, nb_digits=0)
+perturbation = FyM.BernoulliXORPerturbation(probs=torch.Tensor([1., 0.278037, 0.]))
+
+
+@pytest.fixture
+def scalar_tensor() -> torch.Tensor:
+    """A simple scalar tensor put on device
+
+    Returns:
+        torch.Tensor: scalar tensor of value 1
+    """
+    return torch.ones([1]).to(device)
+
 
 @pytest.fixture
 def simple_tensor() -> torch.Tensor:
@@ -59,11 +72,13 @@ def test_represented_weight_safe(simple_module):
     ref = copy.deepcopy(simple_module.feature.weight)
     rp.quantize_perturb()
     assert not torch.equal(ref, simple_module.feature.weight)
+    assert torch.equal(rp.saved_ten, ref)
     shorthand = simple_module.feature.weight.data
     mask = (shorthand == 1) | (shorthand == -1)
     assert mask.sum() == torch.numel(shorthand)
     assert rp.tensor_stats["bitcount"] == torch.numel(shorthand)
     rp.restore()
+    assert rp.saved_ten is None
     assert torch.equal(simple_module.feature.weight, ref)
 
 
@@ -71,15 +86,30 @@ def test_represented_activation_safe(simple_module, simple_tensor):
     ra = FyM.RepresentedActivation(simple_module, "feature", representation)
     out = simple_module(simple_tensor)
     ra.quantize_perturb()
+    ra.save()
     out_pert = simple_module(simple_tensor)
     assert not torch.equal(out, out_pert)
+    assert torch.equal(ra.saved_ten, out)
     mask = (out_pert == 1) | (out_pert == -1)
     assert mask.sum() == torch.numel(out_pert)
     assert ra.tensor_stats["bitcount"] == torch.numel(out_pert) / 64
     ra.__del__()  # del ra do not delete immediately
     out_init = simple_module(simple_tensor)
     assert torch.equal(out_init, out)
+    ra.restore()
+    assert ra.saved_ten is None
 
 
-def test_represented_metrics(scalar_module):
-    pass
+def test_represented_metrics(scalar_module, scalar_tensor):
+    rp = FyM.RepresentedParameter(scalar_module, "feature.weight", u_representation, perturbation)
+    out = scalar_module(scalar_tensor)
+    assert out == 2
+    rp.quantize_perturb()
+    rp.quantize_mse()
+    out_pert = scalar_module(scalar_tensor)
+    assert out_pert != out
+    assert pytest.approx(rp.energy_consumption()[1], 1e-3) == 1.1
+
+    #TODO test if perturbation is scalar
+
+    #TODO test if there is not perturbation

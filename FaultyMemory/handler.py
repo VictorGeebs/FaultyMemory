@@ -1,11 +1,12 @@
 import json
 import torch
+import multiprocessing as mp
 
 from tabulate import tabulate
 
 from FaultyMemory.cluster import Cluster
 from FaultyMemory.perturbator import Perturbator
-from FaultyMemory.representation import Representation, FixedPointRepresentation
+from FaultyMemory.representation import Representation
 from FaultyMemory.represented_tensor import (
     RepresentedParameter,
     RepresentedActivation,
@@ -36,7 +37,7 @@ class Handler:
     def __call__(self, x):
         return self.forward(x)
 
-    def forward(self, x):
+    def forward(self, x, grad_enabled: bool = True):
         r"""
         Saves every tensor, then perturbs every tensor, and then makes the
         forward pass
@@ -44,10 +45,11 @@ class Handler:
         Args:
             x: Input to process
         """
-        self.perturb_tensors()
-        out = self.net.forward(x)
-        self.restore()
-        return out
+        with torch.set_grad_enabled(grad_enabled):
+            self.perturb_tensors()
+            out = self.net.forward(x)
+            self.restore()
+            return out
 
     def perturb_tensors(self) -> None:
         [
@@ -82,7 +84,7 @@ class Handler:
         [func(represented_ten) for represented_ten in self.represented_ten.values()]
 
     def compute_comparative_mse(self, data):
-        r"""Compute the MSE with respect to the non-quantized and non-perturbed network for the input tensor `data`"""
+        r"""Compute the MSE with respect to the non-quantized and non-perturbed network for the input tensor `data`."""
         headers = ["Name", "Ref (==0)", "Quantized", "Quantized_perturbed"]
         # Remove quantize_perturb from callbacks if here
         self.apply(lambda repr_ten: repr_ten.detach_callback("quantize_perturb"))
@@ -137,11 +139,19 @@ class Handler:
         # 2b - Pick pert
         pass
 
-    def parallel_evaluate(self, tensor: torch.Tensor) -> float:
+    def parallel_evaluate(self,
+                          repeat: int,
+                          tensor: torch.Tensor,
+                          loss: torch.nn.Module,
+                          num_workers=4) -> float:
         r"""Massively parallelize a neural network for evaluation of the `tensor` on multiple CPU cores.
         TODO: also use GPU if available
         """
-        pass
+        self.net.to('cpu')
+        assert num_workers <= mp.cpu_count(), 'Cannot instantiate more workers than CPU cores (I guess it would be useless?)'
+        with mp.Pool(num_workers) as p:
+            res = [p.apply_async(self.forward, tensor, False) for _ in range(repeat)]
+        res = [loss(r) for r in res]
 
     def add_parameter(
         self,
@@ -194,26 +204,26 @@ class Handler:
         representation: Representation,
         perturb: Optional[Union[Dict, Perturbator]] = None,
     ):
-        [
+        _ = [
             self.add_parameter(param_key, representation, perturb)
             for param_key, _ in self.net.named_parameters()
         ]
 
     def remove_net_parameters(self) -> None:
-        [self.remove_tensor(param_key) for param_key, _ in self.net.named_parameters()]
+        _ = [self.remove_tensor(param_key) for param_key, _ in self.net.named_parameters()]
 
     def add_net_activations(
         self,
         representation: Representation,
         perturb: Optional[Union[Dict, Perturbator]] = None,
     ) -> None:
-        [
+        _ = [
             self.add_activation(module, representation, perturb)
             for module, _ in self.net.named_modules()
         ]
 
     def remove_net_activations(self):
-        [self.remove_activation(module) for module, _ in self.net.named_modules()]
+        _ = [self.remove_activation(module) for module, _ in self.net.named_modules()]
 
     def from_json(self, file_path):
         """

@@ -165,3 +165,19 @@ def test_distinct_reference(simple_tensor) -> None:
         if instance.__COMPAT__ != "DIGITAL":
             continue
         assert encoded.dtype == torch.uint8
+
+
+def test_width() -> None:
+    for w in range(1, 8):
+        representation = FyM.UFixedPointRepresentation(width=w)
+        assert representation.width == w
+        representation = FyM.FixedPointRepresentation(width=w)
+        assert representation.width == w
+        representation = FyM.SlowFixedPointRepresentation(width=w)
+        assert representation.width == w
+    representation = FyM.BinaryRepresentation()
+    assert representation.width == 1
+    representation = FyM.ScaledBinaryRepresentation()
+    assert representation.width == 1
+    representation = FyM.ClusteredRepresentation()
+    assert representation.width == 2

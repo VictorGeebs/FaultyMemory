@@ -189,10 +189,15 @@ class RepresentedTensor(ABC):
                 "There are no consumption model other than for BernoulliXORPerturbation yet"
             )
             p = 0.0
-        current_consumption = -np.log(p / a) if p > 0 else 1.0
+        current_consumption = np.zeros_like(p)
+        np.place(current_consumption, p <= 0, 1)
+        np.copyto(current_consumption, -np.log(p) / a, where=(p > 0) & (p < 0.5))
+        
+        if len(p) == 1:
+            np.full(self.repr.width, current_consumption)
         return (
             self.tensor_stats["bitcount"],
-            self.tensor_stats["bitcount"] * current_consumption,
+            sum(self.tensor_stats["bitcount"] * current_consumption / self.repr.width),
         )
 
     def quantize_mse(self) -> None:
@@ -267,6 +272,9 @@ class RepresentedTensor(ABC):
 @add_type
 class RepresentedParameter(RepresentedTensor):
     r"""Seamlessly cast a parameter tensor to faulty hardware"""
+    def __init__(self, model: nn.Module, name: str, representation: Representation, pert: Optional[Union[dict, Perturbator]]) -> None:
+        super().__init__(model, name, representation, pert=pert)
+        self.default_exec_callback_stack()
 
     def where_ten(self) -> dict:
         return dict(self.model.named_parameters())

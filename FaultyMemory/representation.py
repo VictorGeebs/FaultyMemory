@@ -50,11 +50,13 @@ class Representation(ABC):
         if other.width > 1:
             # First case, both repr and pert on multibits = should be same
             width_check = self.width == other.width
-        else:
+        elif other.width == 1:
             # Scd case, pert is scalar = should inflate to match repr width
             width_check = True
             if self.width > 1:
                 other.width_correction = self.width
+        else:
+            raise ValueError('Perturbator width should be an integer greather than 0')
         return self.__COMPAT__ in other.repr_compatibility and width_check
 
     @abstractclassmethod

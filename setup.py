@@ -51,7 +51,7 @@ setup(
     license=info.__license__,
     keywords=["deep learning", "pytorch", "AI", "hardware emulation"],
     python_requires=">=3.6",
-    install_requires=load_requirements(path_dir=_PATH_REQUIRE, file_name="base.txt")+['torch'],
+    install_requires=load_requirements(path_dir=_PATH_REQUIRE, file_name="base.txt") + ['torch'],
     extras_require=extras,
     packages=find_packages(exclude=["tests", "benchmarks", "benchmarks/*", "tutorial"]),
 )

@@ -207,7 +207,7 @@ def sanctify_ten(ten: torch.Tensor) -> torch.Tensor:
 
     Note: `deepcopy` is needed in case the tensor is already on CPU, in which case `.cpu()` do not make a copy
     """
-    return copy.deepcopy(ten).cpu()
+    return copy.deepcopy(ten.clone().detach()).cpu()
 
 
 def sanitize_number(
