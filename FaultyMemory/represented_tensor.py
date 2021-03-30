@@ -47,7 +47,7 @@ class RepresentedTensor(ABC):
         self.saved_ten = None
         self.tensor_stats = {}
 
-    def __str__(self) -> str:
+    def __str__(self) -> str:  # pragma: no cover
         string = f"{self.repr} tensor \n"
         string += tabulate(
             self.pert, ["Perturbation type", "Params."], tablefmt="github"

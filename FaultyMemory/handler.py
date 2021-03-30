@@ -80,7 +80,7 @@ class Handler(object):
     def apply(self, func):
         [func(represented_ten) for represented_ten in self.represented_ten.values()]
 
-    def compute_comparative_MSE(self, data):
+    def compute_comparative_mse(self, data):
         r"""Compute the MSE with respect to the non-quantized and non-perturbed network for the input tensor `data`"""
         headers = ["Name", "Ref (==0)", "Quantized", "Quantized_perturbed"]
         # Remove quantize_perturb from callbacks if here

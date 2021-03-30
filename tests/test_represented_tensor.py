@@ -23,7 +23,19 @@ def simple_tensor() -> torch.Tensor:
 
 
 @pytest.fixture
-def simple_module() -> torch.nn.Module():
+def scalar_module() -> torch.nn.Module:
+    class SimpleModule(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.feature = torch.nn.Linear(1,1,False)
+            self.feature.weight.zero_().add_(2)
+
+        def forward(self, x):
+            return self.feature(x)
+
+
+@pytest.fixture
+def simple_module() -> torch.nn.Module:
     class SimpleModule(torch.nn.Module):
         def __init__(self):
             super().__init__()
@@ -62,3 +74,7 @@ def test_represented_activation_safe(simple_module, simple_tensor):
     ra.__del__()  # del ra do not delete immediately
     out_init = simple_module(simple_tensor)
     assert torch.equal(out_init, out)
+
+
+def test_represented_metrics(scalar_module):
+    pass
