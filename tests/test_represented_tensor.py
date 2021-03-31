@@ -12,6 +12,7 @@ torch.manual_seed(0)
 
 representation = FyM.BinaryRepresentation()
 
+
 @pytest.fixture
 def scalar_tensor() -> torch.Tensor:
     """A simple scalar tensor put on device
@@ -120,15 +121,13 @@ def test_represented_energy(scalar_module):
     assert rp.energy_consumption()[1] == 3
 
     # NO PERT
-    rp = FyM.RepresentedParameter(
-        scalar_module, "feature.weight", u_representation
-    )
+    rp = FyM.RepresentedParameter(scalar_module, "feature.weight", u_representation)
     assert rp.energy_consumption()[1] == 3
 
 
 def test_represented_mse(scalar_module, scalar_tensor):
     u_representation = FyM.UFixedPointRepresentation(width=3, nb_digits=0)
-    perturbation = FyM.BernoulliXORPerturbation(probs=torch.Tensor([1.0, 0., 1.0]))
+    perturbation = FyM.BernoulliXORPerturbation(probs=torch.Tensor([1.0, 0.0, 1.0]))
     rp = FyM.RepresentedParameter(
         scalar_module, "feature.weight", u_representation, perturbation
     )

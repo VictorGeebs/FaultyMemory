@@ -25,9 +25,9 @@ class Perturbator(ABC):
 
     def __str__(self) -> str:
         string = type(self).__name__
-        string += f' of probs {str(self.distribution.probs)} \n'
+        string += f" of probs {str(self.distribution.probs)} \n"
         tensor = self.distribution.sample(sample_shape=[1])
-        string += f'Ex: {tensor} ({self.handle_sample(tensor, True)})'
+        string += f"Ex: {tensor} ({self.handle_sample(tensor, True)})"
         return string
 
     def __call__(self, tensor: torch.Tensor):

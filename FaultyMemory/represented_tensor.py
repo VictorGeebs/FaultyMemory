@@ -114,7 +114,7 @@ class RepresentedTensor(ABC):
             "autoremove": autoremove,
         }
         # TODO an idea to dynamically re-execute the cb stack each time a new cb is attached. A pain with the saves though. worth it ?
-        #if self._executed:
+        # if self._executed:
         #    self.restore()
         #    self.default_exec_callback_stack()
 
@@ -138,7 +138,7 @@ class RepresentedTensor(ABC):
             print(f"The callback {name} is not registered")
 
     def to_repr(self, x) -> None:
-        # TODO pre-compute the fault mask with bitwise ops 
+        # TODO pre-compute the fault mask with bitwise ops
         # so as not to create dependencies in the comp.
         # graph on encoded and achieve potential speed-ups
         encoded = self.repr.encode(x)
@@ -167,6 +167,7 @@ class RepresentedTensor(ABC):
             if self.saved_ten is None:
                 self.saved_ten = sanctify_ten(ten)
                 self.ref_ten = ten
+
         self.access_ten_before(func, name="save_tensor")
 
     def restore(self, purge: bool = True) -> None:
@@ -214,6 +215,7 @@ class RepresentedTensor(ABC):
         r"""Computes the Mean Squared Error between an original tensor and its quantized version
         TODO quantify the impact of data movs. Maybe let saved_ten stay on device at first ?
         """
+
         def func(self, output) -> None:
             print(self.saved_ten)
             ten = self.saved_ten.to(output)
