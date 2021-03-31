@@ -5,15 +5,12 @@ import copy
 import FaultyMemory as FyM
 import torch
 import pytest
+import itertools
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 torch.manual_seed(0)
 
 representation = FyM.BinaryRepresentation()
-
-u_representation = FyM.UFixedPointRepresentation(width=3, nb_digits=0)
-perturbation = FyM.BernoulliXORPerturbation(probs=torch.Tensor([1.0, 0.278037, 0.0]))
-
 
 @pytest.fixture
 def scalar_tensor() -> torch.Tensor:
@@ -100,7 +97,38 @@ def test_represented_activation_safe(simple_module, simple_tensor):
     assert ra.saved_ten is None
 
 
-def test_represented_metrics(scalar_module, scalar_tensor):
+def test_represented_energy(scalar_module):
+    u_representation = FyM.UFixedPointRepresentation(width=3, nb_digits=0)
+    for combi in itertools.permutations([0.0, 0.278037, 1.0]):
+        perturbation = FyM.BernoulliXORPerturbation(probs=torch.Tensor(combi))
+        rp = FyM.RepresentedParameter(
+            scalar_module, "feature.weight", u_representation, perturbation
+        )
+        assert pytest.approx(rp.energy_consumption()[1], 1e-4) == 1.1
+
+    # SCALAR PERT
+    perturbation = FyM.BernoulliXORPerturbation(probs=1)
+    rp = FyM.RepresentedParameter(
+        scalar_module, "feature.weight", u_representation, perturbation
+    )
+    assert rp.energy_consumption()[1] == 0
+
+    perturbation = FyM.BernoulliXORPerturbation(probs=0)
+    rp = FyM.RepresentedParameter(
+        scalar_module, "feature.weight", u_representation, perturbation
+    )
+    assert rp.energy_consumption()[1] == 3
+
+    # NO PERT
+    rp = FyM.RepresentedParameter(
+        scalar_module, "feature.weight", u_representation
+    )
+    assert rp.energy_consumption()[1] == 3
+
+
+def test_represented_mse(scalar_module, scalar_tensor):
+    u_representation = FyM.UFixedPointRepresentation(width=3, nb_digits=0)
+    perturbation = FyM.BernoulliXORPerturbation(probs=torch.Tensor([1.0, 0., 1.0]))
     rp = FyM.RepresentedParameter(
         scalar_module, "feature.weight", u_representation, perturbation
     )
@@ -108,10 +136,15 @@ def test_represented_metrics(scalar_module, scalar_tensor):
     assert out == 2
     rp.quantize_perturb()
     rp.quantize_mse()
+    assert scalar_module.feature.weight.data.item() == 7
     out_pert = scalar_module(scalar_tensor)
-    assert out_pert != out
-    assert pytest.approx(rp.energy_consumption()[1], 1e-3) == 1.1
+    assert out_pert != out and out_pert == 7
+
+    rp.off_perturbs()
+    out_quantized = scalar_module(scalar_tensor)
+    assert out_quantized == out
+    rp.on_perturbs()
+    out_perturbed = scalar_module(scalar_tensor)
+    assert out_perturbed == out_pert
 
     # TODO test if perturbation is scalar
-
-    # TODO test if there is not perturbation

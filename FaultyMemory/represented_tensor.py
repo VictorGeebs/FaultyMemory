@@ -6,14 +6,15 @@ from FaultyMemory.representation import (
     Representation,
     construct_repr,
 )
+
 from tabulate import tabulate
+import copy
 import numpy as np
 import torch
 import torch.nn as nn
 import inspect
+import logging
 from abc import ABC, abstractclassmethod
-
-import copy
 
 TYPE_DICT = {}
 
@@ -46,6 +47,7 @@ class RepresentedTensor(ABC):
         self.compute_bitcount()
         self.saved_ten = None
         self.tensor_stats = {}
+        self.save()
 
     def __str__(self) -> str:  # pragma: no cover
         string = f"{self.repr} tensor \n"
@@ -83,9 +85,10 @@ class RepresentedTensor(ABC):
         self._perturb = False
 
     def default_exec_callback_stack(self) -> None:
-        r"""Run the callback stack immediately
+        r"""Run the callback stack immediately.
+
         Counterpart of quantize_perturb that do not ensure quantization/perturbation
-        Mainly for testing purposes
+        Mainly for testing purposes/RepresentedWeights
         """
         self.exec_callbacks_stack(self.access_ten())
 
@@ -110,28 +113,33 @@ class RepresentedTensor(ABC):
             "func": callback,
             "autoremove": autoremove,
         }
+        # TODO an idea to dynamically re-execute the cb stack each time a new cb is attached. A pain with the saves though. worth it ?
+        #if self._executed:
+        #    self.restore()
+        #    self.default_exec_callback_stack()
 
     def access_ten_before(
         self,
         callback: Callable,
+        name: str,
         autoremove: bool = False,
-        name: str = "before_quantize",
     ) -> None:
         self.register_callback(callback, name, float("-inf"), autoremove)
 
     def access_ten_after(
-        self, callback: Callable, autoremove: bool = False, name: str = "after_quantize"
+        self, callback: Callable, name: str, autoremove: bool = False
     ) -> None:
         self.register_callback(callback, name, float("inf"), autoremove)
 
-    def detach_callback(self, name: str):
+    def detach_callback(self, name: str, tentative: False):
         if name in self.callbacks:
             self.callbacks.pop(name)
-        else:
+        elif not tentative:
             print(f"The callback {name} is not registered")
 
     def to_repr(self, x) -> None:
-        # TODO pre-compute the fault mask with bitwise ops so as not to create dependicies in the comp.
+        # TODO pre-compute the fault mask with bitwise ops 
+        # so as not to create dependencies in the comp.
         # graph on encoded and achieve potential speed-ups
         encoded = self.repr.encode(x)
         if self._perturb:
@@ -159,18 +167,17 @@ class RepresentedTensor(ABC):
             if self.saved_ten is None:
                 self.saved_ten = sanctify_ten(ten)
                 self.ref_ten = ten
-            else:
-                # TODO test if 2 GPU trigger this print
-                print("Another tensor is already saved")
-
-        self.access_ten_before(func, name="save_tensor", autoremove=True)
+        self.access_ten_before(func, name="save_tensor")
 
     def restore(self, purge: bool = True) -> None:
-        if self.saved_ten is not None:
-            self.ref_ten.data.copy_(self.saved_ten.data.to(self.ref_ten))
-            if purge:
-                del self.saved_ten
-                self.saved_ten = None
+        """Restore the representend tensor to an original state.
+
+        Args:
+            purge (bool, optional): Delete the saved copy of the tensor if True. Defaults to True.
+        """
+        if self.saved_ten is not None and purge:
+            del self.saved_ten
+            self.saved_ten = None
 
     def compute_bitcount(self) -> None:
         def func(self, output) -> None:
@@ -182,32 +189,33 @@ class RepresentedTensor(ABC):
         assert (
             "bitcount" in self.tensor_stats.keys()
         ), "Bitcount has not been set in `compute_bitcount`"
+
+        def energy_formula(p):
+            return -np.log(p) / a if (p > 0) & (p < 0.5) else 1 if p <= 0 else 0
+
         if "BernoulliXORPerturbation" in self.pert:
             p = self.pert["BernoulliXORPerturbation"].distribution.probs.cpu().numpy()
+            if np.ndim(p) == 0:
+                current_consumption = energy_formula(p)
+            else:
+                current_consumption = np.average([energy_formula(pi) for pi in p])
         else:
             print(
                 "There are no consumption model other than for BernoulliXORPerturbation yet"
             )
-            p = 0.0
-        current_consumption = np.zeros_like(p)
-        np.place(current_consumption, p <= 0, 1)
-        np.copyto(current_consumption, -np.log(p) / a, where=(p > 0) & (p < 0.5))
+            current_consumption = 1
 
-        if len(p) == 1:
-            np.full(self.repr.width, current_consumption)
         return (
             self.tensor_stats["bitcount"],
-            sum(self.tensor_stats["bitcount"] * current_consumption / self.repr.width),
+            self.tensor_stats["bitcount"] * current_consumption,
         )
 
     def quantize_mse(self) -> None:
         r"""Computes the Mean Squared Error between an original tensor and its quantized version
         TODO quantify the impact of data movs. Maybe let saved_ten stay on device at first ?
         """
-        if self.saved_ten is None and "save_tensor" not in self.callbacks:
-            self.save()
-
         def func(self, output) -> None:
+            print(self.saved_ten)
             ten = self.saved_ten.to(output)
             loss = nn.MSELoss().to(output)
             self.tensor_stats["MSE"] = loss(output, ten).item()
@@ -281,15 +289,19 @@ class RepresentedParameter(RepresentedTensor):
         pert: Optional[Union[dict, Perturbator]] = None,
     ) -> None:
         super().__init__(model, name, representation, pert=pert)
-        self.default_exec_callback_stack()
+        self.default_exec_callback_stack()  # For bitcount
 
     def where_ten(self) -> dict:
         return dict(self.model.named_parameters())
 
     def quantize_perturb(self) -> None:
         super().quantize_perturb()
-        self.save()
         self.default_exec_callback_stack()
+
+    def restore(self, purge: bool = True) -> None:
+        if self.saved_ten is not None:
+            self.ref_ten.data.copy_(self.saved_ten.data.to(self.ref_ten))
+        super().restore(purge=purge)
 
 
 @add_type
@@ -315,6 +327,7 @@ class RepresentedActivation(RepresentedTensor):
         return dict(self.model.named_modules())
 
     def default_exec_callback_stack(self) -> None:
+        # TODO perform the callback stack on self.saved_ten ~ useful ?
         pass
 
     def compute_bitcount(self) -> None:
@@ -326,10 +339,8 @@ class RepresentedActivation(RepresentedTensor):
         self.access_ten_after(func, name="compute_bitcount", autoremove=True)
 
     def restore(self, purge: bool = True) -> None:
-        print("Cannot restore an activation, will only delete the saved tensor")
-        if self.saved_ten is not None and purge:
-            del self.saved_ten
-            self.saved_ten = None
+        logging.info("Cannot restore an activation, will only delete the saved tensor")
+        super().restore(purge=purge)
 
     def __del__(self):
         self.hook.remove()

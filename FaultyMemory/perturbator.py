@@ -23,11 +23,18 @@ class Perturbator(ABC):
         self.freeze = False
         self.width_correction = 0
 
+    def __str__(self) -> str:
+        string = type(self).__name__
+        string += f' of probs {str(self.distribution.probs)} \n'
+        tensor = self.distribution.sample(sample_shape=[1])
+        string += f'Ex: {tensor} ({self.handle_sample(tensor, True)})'
+        return string
+
     def __call__(self, tensor: torch.Tensor):
         # FIXME if scalar dist but multibits repr, should inflate dist to match repr
         if (self.distribution.probs == 0).all():
             return tensor
-        if not self.freeze:
+        if not self.freeze or self.saved_sample is None:
             sample_shape = (
                 tensor.size()
                 if self.width_correction == 0
