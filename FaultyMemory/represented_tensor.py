@@ -124,7 +124,9 @@ class RepresentedTensor(ABC):
             "autoremove": autoremove,
         }
         if not self._restored:
-            print('A callback was attached while the tensor is already quantized. Restore and quantize to perform the new callback.')
+            print(
+                "A callback was attached while the tensor is already quantized. Restore and quantize to perform the new callback."
+            )
         # TODO an idea to dynamically re-execute the cb stack each time a new cb is attached. A pain with the saves though. worth it ?
         # if self._executed:
         #    self.restore()
@@ -170,7 +172,7 @@ class RepresentedTensor(ABC):
 
     def quantize_perturb(self) -> None:
         def func(self, output) -> None:
-            assert self._restored, 'Trying to quantize without prior restore'
+            assert self._restored, "Trying to quantize without prior restore"
             self._restored = False
             output.data.copy_(self.to_repr(output).data)
 
@@ -232,7 +234,7 @@ class RepresentedTensor(ABC):
         """
 
         def func(self, output) -> None:
-            print(f'in mse {output}')
+            print(f"in mse {output}")
             print(self.saved_ten)
             ten = self.saved_ten.to(output)
             loss = nn.MSELoss().to(output)
@@ -312,7 +314,7 @@ class RepresentedParameter(RepresentedTensor):
         # FIXME
         # When the represented parameter is overwritten
         # Some unwanted timing between the previous __del__
-        # and the current __init__ makes a copy of the 
+        # and the current __init__ makes a copy of the
         # potentially previous to_repr in self.saved_ten
         # super().restore() here ensure there is no such copy
 
