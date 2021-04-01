@@ -39,7 +39,7 @@ jobs:
     - name: Test with pytest
       run: |
         pytest
-        pytest --cov=./ --cov-report=xml   
+        pytest --cov-report=xml term-missing --cov=FaultyMemory tests
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
       with:
