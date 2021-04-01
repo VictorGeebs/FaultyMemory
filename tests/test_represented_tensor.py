@@ -133,17 +133,36 @@ def test_represented_mse(scalar_module, scalar_tensor):
     )
     out = scalar_module(scalar_tensor)
     assert out == 2
-    rp.quantize_perturb()
     rp.quantize_mse()
+    rp.quantize_perturb()
     assert scalar_module.feature.weight.data.item() == 7
     out_pert = scalar_module(scalar_tensor)
     assert out_pert != out and out_pert == 7
+    assert rp.tensor_stats["MSE"] == 25
 
+    perturbation = FyM.BernoulliXORPerturbation(probs=1)
+    rp = FyM.RepresentedParameter(
+        scalar_module, "feature.weight", u_representation, perturbation
+    )
+    assert scalar_module.feature.weight.data.item() == 2
+    rp.quantize_mse()
+    rp.quantize_perturb()
+    assert scalar_module.feature.weight.data.item() == 5
+    assert rp.tensor_stats["MSE"] == 9
+
+
+def test_represented_on_off(scalar_module, scalar_tensor):
+    u_representation = FyM.UFixedPointRepresentation(width=3, nb_digits=0)
+    perturbation = FyM.BernoulliXORPerturbation(probs=torch.Tensor([1.0, 0.0, 1.0]))
+    rp = FyM.RepresentedParameter(
+        scalar_module, "feature.weight", u_representation, perturbation
+    )
     rp.off_perturbs()
+    rp.quantize_perturb()
     out_quantized = scalar_module(scalar_tensor)
-    assert out_quantized == out
+    assert out_quantized == 2
+    rp.restore()
     rp.on_perturbs()
+    rp.quantize_perturb()
     out_perturbed = scalar_module(scalar_tensor)
-    assert out_perturbed == out_pert
-
-    # TODO test if perturbation is scalar
+    assert out_perturbed == 7

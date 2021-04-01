@@ -37,16 +37,22 @@ class RepresentedTensor(ABC):
         representation: Representation,
         pert: Optional[Union[dict, Perturbator]] = None,
     ) -> None:
-        self.name = name
+        # FLAGS (PRIVATE)
         self._perturb = True
+        self._restored = True
+
+        # PROPERTY (PUBLIC)
+        self.name = name
         self.repr = copy.deepcopy(representation)
         self.pert = dictify(pert)
         self.model = model
         self.callbacks = {}
+        self.tensor_stats = {}
+
+        # INIT REFS
         ten_exists(self.where_ten(), name)
         self.compute_bitcount()
         self.saved_ten = None
-        self.tensor_stats = {}
         self.save()
 
     def __str__(self) -> str:  # pragma: no cover
@@ -62,6 +68,10 @@ class RepresentedTensor(ABC):
         )
         return string
 
+    def __del__(self) -> None:
+        if not self._restored:
+            self.restore()
+
     @classmethod
     def from_dict(cls, _dict: dict, model: nn.Module):
         return cls(
@@ -71,7 +81,7 @@ class RepresentedTensor(ABC):
             {pert["name"]: construct_pert(pert) for pert in _dict["pert"]},
         )
 
-    def access_ten(self):
+    def access_ten(self) -> torch.Tensor:
         return self.where_ten()[self.name]
 
     @abstractclassmethod
@@ -113,6 +123,8 @@ class RepresentedTensor(ABC):
             "func": callback,
             "autoremove": autoremove,
         }
+        if not self._restored:
+            print('A callback was attached while the tensor is already quantized. Restore and quantize to perform the new callback.')
         # TODO an idea to dynamically re-execute the cb stack each time a new cb is attached. A pain with the saves though. worth it ?
         # if self._executed:
         #    self.restore()
@@ -158,6 +170,8 @@ class RepresentedTensor(ABC):
 
     def quantize_perturb(self) -> None:
         def func(self, output) -> None:
+            assert self._restored, 'Trying to quantize without prior restore'
+            self._restored = False
             output.data.copy_(self.to_repr(output).data)
 
         self.register_callback(func, name="quantize_perturb", priority=0)
@@ -176,6 +190,7 @@ class RepresentedTensor(ABC):
         Args:
             purge (bool, optional): Delete the saved copy of the tensor if True. Defaults to True.
         """
+        self._restored = True
         if self.saved_ten is not None and purge:
             del self.saved_ten
             self.saved_ten = None
@@ -217,6 +232,7 @@ class RepresentedTensor(ABC):
         """
 
         def func(self, output) -> None:
+            print(f'in mse {output}')
             print(self.saved_ten)
             ten = self.saved_ten.to(output)
             loss = nn.MSELoss().to(output)
@@ -292,6 +308,13 @@ class RepresentedParameter(RepresentedTensor):
     ) -> None:
         super().__init__(model, name, representation, pert=pert)
         self.default_exec_callback_stack()  # For bitcount
+        super().restore()  # Weird timing behavior: see below
+        # FIXME
+        # When the represented parameter is overwritten
+        # Some unwanted timing between the previous __del__
+        # and the current __init__ makes a copy of the 
+        # potentially previous to_repr in self.saved_ten
+        # super().restore() here ensure there is no such copy
 
     def where_ten(self) -> dict:
         return dict(self.model.named_parameters())
