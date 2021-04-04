@@ -125,7 +125,9 @@ def test_ufixed_point_round(rounding_tensor) -> None:
     assert torch.equal(encoded, ir)
     assert torch.equal(decoded, target)
 
-    representation = FyM.UFixedPointRepresentation(width=4, nb_digits=1)  # i.e. Relu 6 + 1 bit
+    representation = FyM.UFixedPointRepresentation(
+        width=4, nb_digits=1
+    )  # i.e. Relu 6 + 1 bit
     encoded, decoded = encode_decode(rounding_tensor, representation)
     target = torch.tensor([3, 3.5, 3.5, 4]).to(decoded)
     assert torch.equal(decoded, target)
