@@ -14,10 +14,11 @@ import torch
 import logging
 from .perturbator import Perturbator
 from abc import ABC, abstractclassmethod
-#from torch.utils.cpp_extension import load
+
+# from torch.utils.cpp_extension import load
 from typing import Callable
 
-#Cpp_Repr = load(name="Cpp_Repr", sources=["FaultyMemory/cpp/representation.cpp"])
+# Cpp_Repr = load(name="Cpp_Repr", sources=["FaultyMemory/cpp/representation.cpp"])
 
 REPR_DICT = {}
 
@@ -194,12 +195,12 @@ class FixedPointRepresentation(DigitalRepresentation):
 
     def encode(self, tensor: torch.Tensor) -> torch.Tensor:
         pass
-        #self.save_attributes(tensor)
-        #return Cpp_Repr.encodeTenFixedPoint(tensor, self.width, self.nb_digits)
+        # self.save_attributes(tensor)
+        # return Cpp_Repr.encodeTenFixedPoint(tensor, self.width, self.nb_digits)
 
     def decode(self, tensor: torch.Tensor) -> torch.Tensor:
         pass
-        #return Cpp_Repr.decodeTenFixedPoint(tensor, self.width, self.nb_digits)
+        # return Cpp_Repr.decodeTenFixedPoint(tensor, self.width, self.nb_digits)
 
 
 @add_repr
