@@ -117,6 +117,9 @@ def test_fixed_point(floating_tensor, type_repr) -> None:
 
 
 def test_ufixed_point_round(rounding_tensor) -> None:
+    # Note: Round behavior is Numpy inspired: it "rounds" to the nearest even number
+    # FIXME: once the following feature is implemented in Pytorch, a flag should be provided to the user
+    # https://github.com/pytorch/pytorch/issues/55289
     representation = FyM.UFixedPointRepresentation(width=3, nb_digits=0)  # i.e. Relu 6
     # [3.20, 3.25, 3.5, 3.75]
     encoded, decoded = encode_decode(rounding_tensor, representation)
@@ -129,7 +132,7 @@ def test_ufixed_point_round(rounding_tensor) -> None:
         width=4, nb_digits=1
     )  # i.e. Relu 6 + 1 bit
     encoded, decoded = encode_decode(rounding_tensor, representation)
-    target = torch.tensor([3, 3.5, 3.5, 4]).to(decoded)
+    target = torch.tensor([3, 3, 3.5, 4]).to(decoded)
     assert torch.equal(decoded, target)
 
 
