@@ -48,18 +48,20 @@ testset = datasets.CIFAR10(
 )
 
 testloader = torch.utils.data.DataLoader(
-    testset, batch_size=512, shuffle=False, num_workers=2
+    testset, batch_size=2048, shuffle=False, num_workers=1
 )
+print("testloader done")
 
 trainset = datasets.CIFAR10(
     root="./data", train=True, download=True, transform=transform
 )
 
 trainloader = torch.utils.data.DataLoader(
-    trainset, batch_size=4, shuffle=True, num_workers=2
+    trainset, batch_size=2048, shuffle=True, num_workers=1
 )
+print("trainloader done")
 
-repr_list = [R.FixedPointRepresentation(width=8, nb_digits=8)]
+repr_list = [R.SlowFixedPointRepresentation(width=8, nb_digits=8)]
 pert_list = [
     P.BernoulliXORPerturbation(probs=0),
     P.BernoulliXORPerturbation(probs=0.01),
@@ -84,6 +86,7 @@ csv_data = [
 for net in net_list:
     for repr in repr_list:
         for pert in pert_list:
+            print("Creating handler")
             criterion = nn.CrossEntropyLoss()
             optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
@@ -93,17 +96,18 @@ for net in net_list:
             pert.width = repr.width
             handler.add_net_parameters(representation=repr, perturb=pert)
 
-            mse_list = handler.compute_MSE()
-            min_mse_index = mse_list.index(min(mse_list))
-
             net_copy.eval()
 
+            print("Evaluating net " + net.name) 
             init_acc = utils.test_accuracy(net_copy, testloader)
             handler_acc = utils.test_accuracy(handler, testloader)
 
+            print("Training net " + net.name)
             net_copy.train()
-            utils.train_net(handler, optimizer, criterion, trainloader, 5, prt=False)
+            utils.train_net(handler, optimizer, criterion, trainloader, 2, prt=True)
 
+            print("Testing new accuracy of " + net.name)
+            net_copy.eval()
             init_trained_acc = utils.test_accuracy(net_copy, testloader)
             handler_trained_acc = utils.test_accuracy(handler, testloader)
 

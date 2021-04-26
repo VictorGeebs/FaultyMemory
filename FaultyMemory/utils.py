@@ -4,6 +4,7 @@ import re
 import math
 from numbers import Number
 import numpy as np
+import tqdm
 
 
 def listify(obj: object) -> list:
@@ -72,6 +73,51 @@ def kmeans_nparray(np_array: np.array, nb_clusters: int) -> np.array:
     encoded, _ = vq(np_array, codebook)
     return np.array([codebook[i] for i in encoded])
 
+def test_accuracy(net, testloader) -> float:
+    """
+    A basic test function to test the accuracy of a network. \n
+    This function might need modification depending on the type of label you
+    wish to have.
+    """
+    correct = 0
+    total = 0
+    with torch.no_grad():
+        for data in testloader:
+            samples, labels = data
+            samples, labels = samples.to(net.device), labels.to(net.device)
+            outputs = net(samples)
+            # net.restore()
+            _, predicted = torch.max(outputs, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+            # print("running acc: ", correct/total)
+            # break
+    accuracy = correct / total
+    return accuracy
+
+
+def train_net(net, optimizer, criterion, trainloader, nb_epochs, prt=True):
+    """
+    A basic function used to train networks in a generic fashion
+    """
+    for epoch in range(nb_epochs):
+        running_loss = 0.0
+        print("epoch %i of %i" % (epoch + 1, nb_epochs))
+        for i, data in enumerate(trainloader):
+
+            inputs, labels = data
+
+            optimizer.zero_grad()
+            outputs = net.forward(inputs)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+
+            running_loss += loss.item()
+        if prt == True:
+            print("[%d, %5d] loss: %.3f" % (epoch + 1, i + 1, running_loss / (i + 1)))
+    if prt == True:
+        print("Finished Training")
 
 @torch.jit.script
 def twos_compl(tensor: torch.Tensor) -> torch.Tensor:
