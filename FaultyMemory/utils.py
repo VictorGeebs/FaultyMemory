@@ -73,6 +73,7 @@ def kmeans_nparray(np_array: np.array, nb_clusters: int) -> np.array:
     encoded, _ = vq(np_array, codebook)
     return np.array([codebook[i] for i in encoded])
 
+
 def test_accuracy(net, testloader) -> float:
     """
     A basic test function to test the accuracy of a network. \n
@@ -118,6 +119,7 @@ def train_net(net, optimizer, criterion, trainloader, nb_epochs, prt=True):
             print("[%d, %5d] loss: %.3f" % (epoch + 1, i + 1, running_loss / (i + 1)))
     if prt == True:
         print("Finished Training")
+
 
 @torch.jit.script
 def twos_compl(tensor: torch.Tensor) -> torch.Tensor:

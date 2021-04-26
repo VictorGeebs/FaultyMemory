@@ -62,11 +62,11 @@ class Representation(ABC):
 
     @abstractclassmethod
     def encode(self, tensor: torch.Tensor) -> torch.Tensor:
-        r""" By convention, do not return the same tensor as is"""
+        r"""By convention, do not return the same tensor as is"""
 
     @abstractclassmethod
     def decode(self, tensor: torch.Tensor) -> torch.Tensor:
-        r""" By convention, do not return the same tensor as is"""
+        r"""By convention, do not return the same tensor as is"""
 
     def quantize(self, tensor: torch.Tensor) -> torch.Tensor:  # pragma: no cover
         return self.decode(self.encode(tensor))

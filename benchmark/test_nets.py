@@ -98,7 +98,7 @@ for net in net_list:
 
             net_copy.eval()
 
-            print("Evaluating net " + net.name) 
+            print("Evaluating net " + net.name)
             init_acc = utils.test_accuracy(net_copy, testloader)
             handler_acc = utils.test_accuracy(handler, testloader)
 
