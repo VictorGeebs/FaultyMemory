@@ -39,7 +39,7 @@ def profile(func, filename, device) -> Callable:
 
 
 def logging(filename, device, data):
-    with open(f'{filename}.csv', 'a+') as f:
+    with open(f"{filename}.csv", "a+") as f:
         writer = csv.writer(f)
         now = datetime.now()
         writer.writerow([now, device, data])

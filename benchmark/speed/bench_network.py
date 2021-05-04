@@ -10,7 +10,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Running on {device}")
 
 resnet18 = models.resnet18(pretrained=True).to(device)
-dummy_tensor = torch.randn([32,3,32,32]).to(device)
+dummy_tensor = torch.randn([32, 3, 32, 32]).to(device)
 representation = FyM.SlowFixedPointRepresentation()
 
 
