@@ -1,6 +1,10 @@
 import sys
+import csv
 import cProfile
+from typing import Callable
+from tqdm import tqdm
 from timeit import default_timer as timer
+from datetime import datetime
 
 
 def timefunc(func, *args, **kwargs):
@@ -17,17 +21,25 @@ def timefunc(func, *args, **kwargs):
     except KeyError:
         iterations = 3
     elapsed = sys.maxsize
-    for _ in range(iterations):
+    for _ in tqdm(range(iterations)):
         start = timer()
-        result = func(*args, **kwargs)
+        _ = func(*args, **kwargs)
         elapsed = min(timer() - start, elapsed)
     print(("Best of {} {}(): {:.9f}".format(iterations, func.__name__, elapsed)))
-    return result
+    return elapsed
 
 
-def profile(func):
-    timefunc(func, iterations=5)
+def profile(func, filename, device) -> Callable:
+    best = timefunc(func, iterations=5)
+    logging(filename, device, best)
     p = cProfile.Profile()
     p.runcall(func)
     p.print_stats(sort="tottime")
     return func
+
+
+def logging(filename, device, data):
+    with open(f'{filename}.csv', 'a+') as f:
+        writer = csv.writer(f)
+        now = datetime.now()
+        writer.writerow([now, device, data])

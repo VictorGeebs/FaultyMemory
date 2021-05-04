@@ -159,7 +159,7 @@ class Handler:
         representation: Representation,
         perturb: Optional[Union[Dict, Perturbator]] = None,
     ) -> None:
-        assert name not in self.represented_ten
+        assert name not in self.represented_ten, f'{name} already saved !'
         self.represented_ten[name] = RepresentedParameter(
             self.net, name, representation, perturb
         )
