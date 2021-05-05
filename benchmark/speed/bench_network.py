@@ -1,6 +1,3 @@
-import sys
-
-sys.path.append("/home/sebastien/workspace/FaultyMemory")  # FIXME quick and dirty
 import FaultyMemory as FyM
 import torch
 from utils import profile

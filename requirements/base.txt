@@ -1,16 +1,11 @@
 future==0.18.2
-httplib2==0.19.0
 idna==2.8
 importlib-metadata==1.7.0
 iniconfig==1.0.1
-jedi==0.17.0
-Jinja2==2.11.3
 jsonpickle==1.4.1
 jsonschema==3.2.0
-keyring==18.0.1
+#ninja
 kiwisolver
-launchpadlib==1.10.13
 tqdm
 tabulate
-ninja
 scipy

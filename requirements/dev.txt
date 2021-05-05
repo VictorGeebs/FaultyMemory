@@ -3,3 +3,5 @@ torch>=1.8
 torchvision
 
 -r ./test.txt
+
+-e .
