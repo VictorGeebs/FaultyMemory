@@ -7,12 +7,12 @@ They at least expose two methods: encode and decode
 Encode returns a tensor in uint8 format
 Decode takes a tensor in uint8 format
 """
-from FaultyMemory.utils import twos_compl
+from FaultyMemory.utils.misc import twos_compl
 import math
 import numpy as np
 import torch
 import logging
-from .perturbator import Perturbator
+from FaultyMemory.perturbator import Perturbator
 from abc import ABC, abstractclassmethod
 from torch.utils.cpp_extension import load
 from typing import Callable

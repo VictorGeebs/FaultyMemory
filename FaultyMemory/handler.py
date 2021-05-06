@@ -12,7 +12,7 @@ from FaultyMemory.represented_tensor import (
     RepresentedActivation,
     construct_type,
 )
-from FaultyMemory.utils import ten_exists
+from FaultyMemory.utils.misc import ten_exists
 
 from typing import Tuple, Union, Optional, Dict
 
@@ -23,7 +23,7 @@ class Handler:
     activation perturbations and clusters.
     """
 
-    def __init__(self, net, clusters: Optional[int] = 0):
+    def __init__(self, net: torch.nn.Module, clusters: Optional[int] = 0):
         self.net = net
         self.represented_ten = {}
         self.clusters = Cluster(clusters)

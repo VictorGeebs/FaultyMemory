@@ -31,15 +31,15 @@ def timefunc(func, *args, **kwargs):
 
 def profile(func, filename, device) -> Callable:
     best = timefunc(func, iterations=5)
-    logging(filename, device, best)
+    logging(filename, func.__name__, device, best)
     p = cProfile.Profile()
     p.runcall(func)
     p.print_stats(sort="tottime")
     return func
 
 
-def logging(filename, device, data):
+def logging(filename, function_name, device, data):
     with open(f"{filename}.csv", "a+") as f:
         writer = csv.writer(f)
         now = datetime.now()
-        writer.writerow([now, device, data])
+        writer.writerow([now, function_name, device, data])

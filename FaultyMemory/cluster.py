@@ -3,7 +3,7 @@ from typing import Callable, List
 import torch
 
 from FaultyMemory.perturbator import Perturbator
-from FaultyMemory.utils import kmeans_nparray, sanctify_ten, sanitize_number
+from FaultyMemory.utils.misc import kmeans_nparray, sanctify_ten, sanitize_number
 
 
 class Cluster(object):
