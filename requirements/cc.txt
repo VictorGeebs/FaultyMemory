@@ -1,6 +1,6 @@
 -r ./base.txt
---no-index
-torch>=1.8
-torchvision
+
+torch>=1.8 --no-index 
+torchvision --no-index 
 
 -e .

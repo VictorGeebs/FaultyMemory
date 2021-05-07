@@ -1,0 +1,2 @@
+2021-05-07 15:09:21.973267,inference_train_with_grads,cuda,45.30665524303913
+2021-05-07 15:13:01.814967,inference_train_without_grads,cuda,33.35296441428363
