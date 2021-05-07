@@ -4,7 +4,12 @@ from FaultyMemory.utils.DataHolder import DataHolder
 from FaultyMemory import Handler
 import torch
 
-DEFAULT_OPT_PARAMS = {'lr': 0.1, 'momentum': 0.9, 'nesterov': True, 'weight_decay': 5e-4}
+DEFAULT_OPT_PARAMS = {
+    "lr": 0.1,
+    "momentum": 0.9,
+    "nesterov": True,
+    "weight_decay": 5e-4,
+}
 
 
 class Trainer:
