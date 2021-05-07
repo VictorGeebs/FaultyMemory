@@ -19,8 +19,10 @@ trainer = FyM.utils.Trainer.Trainer(handler, dataholder, opt_criterion, device)
 def inference_train_with_grads():
     trainer.loop(False, True)
 
+
 def inference_train_without_grads():
     trainer.loop(False, False)
+
 
 _ = profile(inference_train_with_grads, __file__, device)
 _ = profile(inference_train_without_grads, __file__, device)

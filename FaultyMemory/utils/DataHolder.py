@@ -31,7 +31,7 @@ class DataHolder:
         _ = self.class_count()
 
     def access_dataset(self) -> Tuple[Dataset, Dataset]:
-        if not hasattr(self, '_dataset_cache'):
+        if not hasattr(self, "_dataset_cache"):
             base = getattr(torchvision.datasets, self.name)
             kwargs = {
                 "root": self.path,
