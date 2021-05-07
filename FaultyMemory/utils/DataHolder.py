@@ -15,7 +15,7 @@ class DataHolder:
     def __init__(
         self,
         name: str = "CIFAR10",
-        path: str = "./datasets",
+        path: str = "./data",
         batch_size: int = 128,
         num_workers: int = 4,
     ) -> None:
@@ -31,15 +31,17 @@ class DataHolder:
         _ = self.class_count()
 
     def access_dataset(self) -> Tuple[Dataset, Dataset]:
-        base = getattr(torchvision.datasets, self.name)
-        kwargs = {
-            "root": self.path,
-            "download": True,
-        }  # TODO: test if download is necessary
-        return (
-            base(train=True, transform=self.transform_train(), **kwargs),
-            base(train=False, transform=self.transform_test(), **kwargs),
-        )
+        if not hasattr(self, '_dataset_cache'):
+            base = getattr(torchvision.datasets, self.name)
+            kwargs = {
+                "root": self.path,
+                "download": True,
+            }  # TODO: test if download is necessary
+            self._dataset_cache = (
+                base(train=True, transform=self.transform_train(), **kwargs),
+                base(train=False, transform=self.transform_test(), **kwargs),
+            )
+        return self._dataset_cache
 
     def transform_train(self):
         return transforms.Compose(
