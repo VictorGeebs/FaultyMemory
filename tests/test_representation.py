@@ -9,6 +9,16 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 @pytest.fixture
+def rounding_tensor() -> torch.Tensor:
+    """A simple tensor put on device with values expected to be rounded
+
+    Returns:
+        torch.Tensor: tensor
+    """
+    return torch.tensor([3.20, 3.25, 3.5, 3.75]).to(device)
+
+
+@pytest.fixture
 def simple_tensor() -> torch.Tensor:
     """A simple 2 dimensional tensor put on device
 
@@ -103,6 +113,26 @@ def test_fixed_point(floating_tensor, type_repr) -> None:
     target = torch.tensor([[-1, -0.5, -0.5], [1, 0.5, 0.5]]).to(decoded)
     ir = torch.tensor([[224, 240, 240], [32, 16, 16]]).to(torch.uint8)
     assert torch.equal(encoded, ir)
+    assert torch.equal(decoded, target)
+
+
+def test_ufixed_point_round(rounding_tensor) -> None:
+    # Note: Round behavior is Numpy inspired: it "rounds" to the nearest even number
+    # FIXME: once the following feature is implemented in Pytorch, a flag should be provided to the user
+    # https://github.com/pytorch/pytorch/issues/55289
+    representation = FyM.UFixedPointRepresentation(width=3, nb_digits=0)  # i.e. Relu 6
+    # [3.20, 3.25, 3.5, 3.75]
+    encoded, decoded = encode_decode(rounding_tensor, representation)
+    target = torch.tensor([3, 3, 4, 4]).to(decoded)
+    ir = torch.tensor([3, 3, 4, 4]).to(torch.uint8)
+    assert torch.equal(encoded, ir)
+    assert torch.equal(decoded, target)
+
+    representation = FyM.UFixedPointRepresentation(
+        width=4, nb_digits=1
+    )  # i.e. Relu 6 + 1 bit
+    encoded, decoded = encode_decode(rounding_tensor, representation)
+    target = torch.tensor([3, 3, 3.5, 4]).to(decoded)
     assert torch.equal(decoded, target)
 
 

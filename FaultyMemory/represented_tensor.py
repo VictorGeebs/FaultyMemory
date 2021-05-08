@@ -1,4 +1,4 @@
-from FaultyMemory.utils import dictify, ten_exists, sanctify_ten
+from FaultyMemory.utils.misc import dictify, ten_exists, sanctify_ten
 from FaultyMemory.perturbator import Perturbator, construct_pert
 from typing import Callable, Optional, Tuple, Union
 from FaultyMemory.representation import (

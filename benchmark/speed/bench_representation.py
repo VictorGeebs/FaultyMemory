@@ -3,8 +3,7 @@ import sys
 sys.path.append("/home/sebastien/workspace/FaultyMemory")  # FIXME quick and dirty
 import FaultyMemory as FyM
 import torch
-import cProfile
-from utils import timefunc, profile
+from utils import profile
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Running on {device}")
