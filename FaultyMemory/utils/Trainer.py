@@ -22,7 +22,7 @@ class Trainer:
         opt_criterion: Callable,
         device: torch.device,
         optim_params: Dict = DEFAULT_OPT_PARAMS,
-        to_csv: bool = False
+        to_csv: bool = False,
     ) -> None:
         """Base trainer for one device, tested for simple (image, target) datasets.
 
@@ -84,12 +84,14 @@ class Trainer:
 
     def _loop(self, dataloader: torch.utils.data.DataLoader, train_mode: bool = True):
         for i, sample in enumerate(dataloader):
-            if train_mode and 'ticks' in self.extra_information:  # TODO better handling of modes
-                self.extra_information['ticks'] += 1
+            if (
+                train_mode and "ticks" in self.extra_information
+            ):  # TODO better handling of modes
+                self.extra_information["ticks"] += 1
 
             self.handler.perturb_tensors()
             loss, metrics = self.forward(sample)
-            metrics.update({'loss': loss.item()})
+            metrics.update({"loss": loss.item()})
             self.metrics.log(metrics)
 
             if train_mode:
