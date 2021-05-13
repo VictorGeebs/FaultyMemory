@@ -4,8 +4,8 @@ from typing import Union
 from numbers import Number
 from FaultyMemory.utils.Metric import Metric
 from pathlib import Path
+from datetime import datetime
 import csv
-import datetime
 import copy
 
 
