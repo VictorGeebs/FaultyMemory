@@ -70,7 +70,7 @@ class MetricManager:
                     ["date", "architecture", "max_energy", "current_energy"]
                     + list(extra_information.keys())
                     + list(datapoints.keys())
-                )  # TODO extra information
+                )
             writer.writerow(
                 [
                     now,
