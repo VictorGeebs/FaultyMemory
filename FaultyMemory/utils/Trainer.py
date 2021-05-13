@@ -43,14 +43,14 @@ class Trainer:
 
     @property
     def _information(self):
-        """If some information changes, this ensures its reflected.
-        """
+        """If some information changes, this ensures its reflected."""
         max_energy, current_energy = self.handler.energy_consumption()
-        return {'dataset': self.dataholder.name,
-                'architecture': self.handler.net.__class__.__name__,
-                'max_energy_consumption': max_energy,
-                'current_energy_consumption': current_energy}
-
+        return {
+            "dataset": self.dataholder.name,
+            "architecture": self.handler.net.__class__.__name__,
+            "max_energy_consumption": max_energy,
+            "current_energy_consumption": current_energy,
+        }
 
     def init_optimizer(self, optim_params: dict) -> None:
         self.optimizer = torch.optim.SGD(
@@ -63,7 +63,7 @@ class Trainer:
             not test_set or test_set and not grads_enabled
         ), "Training on the test set is not cool :c"
         self.metrics.reset()
-        self.extra_information['set'] = 'test' if test_set else 'train'
+        self.extra_information["set"] = "test" if test_set else "train"
 
         if grads_enabled:
             self.handler.train()
@@ -82,11 +82,11 @@ class Trainer:
     def _loop(self, dataloader: torch.utils.data.DataLoader, train_mode: bool = True):
         for i, sample in enumerate(dataloader):
             if train_mode:
-                self.extra_information['ticks'] += 1
+                self.extra_information["ticks"] += 1
 
             self.handler.perturb_tensors()
             loss, metrics = self.forward(sample)
-            metrics.update('loss', loss.item())
+            metrics.update("loss", loss.item())
             self.metrics.log(metrics)
 
             if train_mode:
@@ -113,7 +113,7 @@ class Trainer:
         loss = self.opt_criterion(output, targets)
 
         acc1, acc5 = accuracy(output, targets, topk=(1, 5))
-        return loss, {'acc1': acc1.item(), 'acc5': acc5.item()}
+        return loss, {"acc1": acc1.item(), "acc5": acc5.item()}
 
     def train_loop(self) -> None:
         self.loop(False)
@@ -131,11 +131,11 @@ class Trainer:
             epoch (int): Epoch at which the training (re)starts
         TODO set a scheduler by default
         """
-        self.extra_information['epoch'] = epoch
-        self.extra_information['ticks'] = 0 # The number of minibatches trained on
+        self.extra_information["epoch"] = epoch
+        self.extra_information["ticks"] = 0  # The number of minibatches trained on
 
     def training_update(self) -> None:
-        self.extra_information['epoch'] += 1
+        self.extra_information["epoch"] += 1
 
     def epoch_loop(self, nb: int, starting_epoch: int = 0):
         self.training_setup(starting_epoch)
