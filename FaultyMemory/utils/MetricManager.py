@@ -21,7 +21,7 @@ class MetricManager:
         if name in self._metrics:
             return self._metrics[name]
         else:
-            raise ValueError('This Metric was not found in the records')
+            raise ValueError("This Metric was not found in the records")
 
     def log(self, *args):
         if len(args) == 1 and isinstance(args[0], dict):
@@ -45,12 +45,11 @@ class MetricManager:
         return {k: getattr(v, func_name)() for (k, v) in self._metrics.items()}
 
     def reset(self):
-        """Reset to empty the metrics.
-        """
+        """Reset to empty the metrics."""
         self._metrics = {}
 
     def average(self) -> dict:
-        return self._apply('average')
+        return self._apply("average")
 
     def to_csv(self, information: dict = {}, extra_information: dict = {}):
         assert 'dataset' in information, 'A name for the datasets used needs to be provided'
@@ -67,12 +66,18 @@ class MetricManager:
             writer = csv.writer(f)
             now = datetime.now()
             if write_heads:
-                writer.writerow(['date', 'architecture', 'max_energy', 'current_energy'] +
-                                list(extra_information.keys()) +
-                                list(datapoints.keys()))  # TODO extra information 
-            writer.writerow([now,
-                             information["architecture"],
-                             information["max_energy_consumption"],
-                             information["current_energy_consumption"]] +
-                             list(extra_information.values()) +
-                             list(datapoints.values()))
+                writer.writerow(
+                    ["date", "architecture", "max_energy", "current_energy"]
+                    + list(extra_information.keys())
+                    + list(datapoints.keys())
+                )  # TODO extra information
+            writer.writerow(
+                [
+                    now,
+                    information["architecture"],
+                    information["max_energy_consumption"],
+                    information["current_energy_consumption"],
+                ]
+                + list(extra_information.values())
+                + list(datapoints.values())
+            )

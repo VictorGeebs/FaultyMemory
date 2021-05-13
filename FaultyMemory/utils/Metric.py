@@ -11,7 +11,7 @@ class Metric:
         self._hist = []
 
     def non_empty(self):
-        assert len(self._hist) > 0, 'This Metric is empty'
+        assert len(self._hist) > 0, "This Metric is empty"
 
     def update(self, value: Union[int, float]):
         assert isinstance(value, float) or isinstance(value, int), 'This Metric applies to scalar only'
