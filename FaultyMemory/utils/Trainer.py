@@ -1,6 +1,8 @@
 """A small barebone trainer for quick experiments."""
+from FaultyMemory.utils.MetricManager import MetricManager
 from typing import Callable, Dict, Tuple
 from FaultyMemory.utils.DataHolder import DataHolder
+from FaultyMemory.utils.accuracy import accuracy
 from FaultyMemory import Handler
 import torch
 
@@ -30,12 +32,25 @@ class Trainer:
             device (torch.Device): the device to use
             optim_params (Dict, optional): parameters for the optimizer. Defaults to DEFAULT_OPT_PARAMS.
         """
+        self.extra_information = {}
         self.handler = handler
         self.dataholder = dataholder
+        self.metrics = MetricManager()
         self.opt_criterion = opt_criterion.to(device)
         self.device = device
         self.init_optimizer(optim_params)
         self.train_loader, self.test_loader = self.dataholder.access_dataloader()
+
+    @property
+    def _information(self):
+        """If some information changes, this ensures its reflected.
+        """
+        max_energy, current_energy = self.handler.energy_consumption()
+        return {'dataset': self.dataholder.name,
+                'architecture': self.handler.net.__class__.__name__,
+                'max_energy_consumption': max_energy,
+                'current_energy_consumption': current_energy}
+
 
     def init_optimizer(self, optim_params: dict) -> None:
         self.optimizer = torch.optim.SGD(
@@ -47,6 +62,9 @@ class Trainer:
         assert (
             not test_set or test_set and not grads_enabled
         ), "Training on the test set is not cool :c"
+        self.metrics.reset()
+        self.extra_information['set'] = 'test' if test_set else 'train'
+
         if grads_enabled:
             self.handler.train()
         else:
@@ -58,13 +76,18 @@ class Trainer:
             dataloader = self.train_loader
 
         with torch.set_grad_enabled(grads_enabled):
-            return self._loop(dataloader, grads_enabled)
+            self._loop(dataloader, grads_enabled)
+        self.metrics.to_csv(self._information, self.extra_information)
 
     def _loop(self, dataloader: torch.utils.data.DataLoader, train_mode: bool = True):
         for i, sample in enumerate(dataloader):
+            if train_mode:
+                self.extra_information['ticks'] += 1
+
             self.handler.perturb_tensors()
-            output, loss = self.forward(sample)
-            # TODO logging
+            loss, metrics = self.forward(sample)
+            metrics.update('loss', loss.item())
+            self.metrics.log(metrics)
 
             if train_mode:
                 self.optimizer.zero_grad()
@@ -74,20 +97,49 @@ class Trainer:
             if train_mode:
                 self.optimizer.step()
 
-    def forward(self, sample: Tuple):
+    def forward(self, sample: Tuple) -> Tuple[torch.Tensor, dict]:
+        """Return the differentiable loss and a dict with optionnal scalar metrics to be logged.
+        Subclass at will for e.g. Mixup. Loss needn't be in the dict.
+        Args:
+            sample (Tuple): The sample to be processed by the neural network.
+
+        Returns:
+            Tuple[torch.Tensor, dict]: [description]
+
+        """
         (images, targets) = sample
         images, targets = images.to(self.device), targets.to(self.device)
         output = self.handler.net(images)
         loss = self.opt_criterion(output, targets)
-        return output, loss
+
+        acc1, acc5 = accuracy(output, targets, topk=(1, 5))
+        return loss, {'acc1': acc1.item(), 'acc5': acc5.item()}
 
     def train_loop(self) -> None:
         self.loop(False)
 
+    def train_nograd_loop(self) -> None:
+        self.loop(False, False)
+
     def test_loop(self) -> None:
         self.loop(True, False)
 
-    def epoch_loop(self, nb: int):
+    def training_setup(self, epoch: int) -> None:
+        """Setup tools and informations for the start of training.
+
+        Args:
+            epoch (int): Epoch at which the training (re)starts
+        TODO set a scheduler by default
+        """
+        self.extra_information['epoch'] = epoch
+        self.extra_information['ticks'] = 0 # The number of minibatches trained on
+
+    def training_update(self) -> None:
+        self.extra_information['epoch'] += 1
+
+    def epoch_loop(self, nb: int, starting_epoch: int = 0):
+        self.training_setup(starting_epoch)
         for _ in range(nb):
+            self.training_update()
             self.train_loop()
             self.test_loop()
