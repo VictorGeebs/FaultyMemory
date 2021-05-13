@@ -84,21 +84,12 @@ class Trainer:
 
     def _loop(self, dataloader: torch.utils.data.DataLoader, train_mode: bool = True):
         for i, sample in enumerate(dataloader):
-<<<<<<< HEAD
             if train_mode and 'ticks' in self.extra_information:  # TODO better handling of modes
                 self.extra_information['ticks'] += 1
 
             self.handler.perturb_tensors()
             loss, metrics = self.forward(sample)
             metrics.update({'loss': loss.item()})
-=======
-            if train_mode:
-                self.extra_information["ticks"] += 1
-
-            self.handler.perturb_tensors()
-            loss, metrics = self.forward(sample)
-            metrics.update("loss", loss.item())
->>>>>>> cb69e5394ec1aaf7a8323a1649dafe11a367a425
             self.metrics.log(metrics)
 
             if train_mode:

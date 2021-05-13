@@ -61,9 +61,12 @@ class MetricManager:
             extra_information
         )
         if "set" in extra_information:
+            dirname = information.pop("dataset")
             filename = os.path.join(
-                information.pop("dataset"), f'{extra_information.pop("set")}.csv'
+                dirname, f'{extra_information.pop("set")}.csv'
             )
+            if not os.path.isdir(dirname):
+                os.mkdir(dirname)
         else:
             filename = f'{information.pop("dataset")}.csv'
 
