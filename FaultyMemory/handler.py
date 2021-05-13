@@ -298,5 +298,5 @@ class Handler:
         r"""Return (max_consumption, current_consumption)
         TODO filter per tensor category ? e.g. parameters/activation have different sums
         """
-        energy = [t.energy_consumption() for t in self.represented_ten]
+        energy = [t.energy_consumption() for t in self.represented_ten.values()]
         return sum([t[0] for t in energy]), sum([t[1] for t in energy])

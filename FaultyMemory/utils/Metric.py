@@ -15,9 +15,9 @@ class Metric:
 
     def update(self, value: Union[int, float]):
         assert isinstance(value, float) or isinstance(value, int), 'This Metric applies to scalar only'
-        self.hist.append(value)
-        if len(self.hist) > self._max_history:
-            self.hist = self.hist[-self._max_history:]
+        self._hist.append(value)
+        if len(self._hist) > self._max_history:
+            self._hist = self._hist[-self._max_history:]
 
     def last(self):
         self.non_empty()

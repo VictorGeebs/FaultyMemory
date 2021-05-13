@@ -22,6 +22,7 @@ class Trainer:
         opt_criterion: Callable,
         device: torch.device,
         optim_params: Dict = DEFAULT_OPT_PARAMS,
+        to_csv: bool = False
     ) -> None:
         """Base trainer for one device, tested for simple (image, target) datasets.
 
@@ -38,6 +39,7 @@ class Trainer:
         self.metrics = MetricManager()
         self.opt_criterion = opt_criterion.to(device)
         self.device = device
+        self.to_csv = to_csv
         self.init_optimizer(optim_params)
         self.train_loader, self.test_loader = self.dataholder.access_dataloader()
 
@@ -77,16 +79,17 @@ class Trainer:
 
         with torch.set_grad_enabled(grads_enabled):
             self._loop(dataloader, grads_enabled)
-        self.metrics.to_csv(self._information, self.extra_information)
+        if self.to_csv:
+            self.metrics.to_csv(self._information, self.extra_information)
 
     def _loop(self, dataloader: torch.utils.data.DataLoader, train_mode: bool = True):
         for i, sample in enumerate(dataloader):
-            if train_mode:
+            if train_mode and 'ticks' in self.extra_information:  # TODO better handling of modes
                 self.extra_information['ticks'] += 1
 
             self.handler.perturb_tensors()
             loss, metrics = self.forward(sample)
-            metrics.update('loss', loss.item())
+            metrics.update({'loss': loss.item()})
             self.metrics.log(metrics)
 
             if train_mode:
@@ -132,7 +135,7 @@ class Trainer:
         TODO set a scheduler by default
         """
         self.extra_information['epoch'] = epoch
-        self.extra_information['ticks'] = 0 # The number of minibatches trained on
+        self.extra_information['ticks'] = 0  # The number of minibatches trained on
 
     def training_update(self) -> None:
         self.extra_information['epoch'] += 1
