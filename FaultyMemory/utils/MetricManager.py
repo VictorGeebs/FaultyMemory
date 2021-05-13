@@ -26,7 +26,9 @@ class MetricManager:
     def log(self, *args):
         if len(args) == 1 and isinstance(args[0], dict):
             self._log_dict(args[0])
-        elif len(args) == 2 and isinstance(args[0], str) and isinstance(args[1], Number):
+        elif (
+            len(args) == 2 and isinstance(args[0], str) and isinstance(args[1], Number)
+        ):
             self._log_scalar(*args)
 
     def _log_dict(self, value_dict: dict) -> None:
@@ -52,10 +54,16 @@ class MetricManager:
         return self._apply("average")
 
     def to_csv(self, information: dict = {}, extra_information: dict = {}):
-        assert 'dataset' in information, 'A name for the datasets used needs to be provided'
-        information, extra_information = copy.deepcopy(information), copy.deepcopy(extra_information)
+        assert (
+            "dataset" in information
+        ), "A name for the datasets used needs to be provided"
+        information, extra_information = copy.deepcopy(information), copy.deepcopy(
+            extra_information
+        )
         if "set" in extra_information:
-            filename = os.path.join(information.pop("dataset"), f'{extra_information.pop("set")}.csv')
+            filename = os.path.join(
+                information.pop("dataset"), f'{extra_information.pop("set")}.csv'
+            )
         else:
             filename = f'{information.pop("dataset")}.csv'
 

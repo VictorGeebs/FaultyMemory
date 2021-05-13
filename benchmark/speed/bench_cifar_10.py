@@ -13,7 +13,9 @@ opt_criterion = torch.nn.CrossEntropyLoss()
 handler = FyM.Handler(resnet)
 handler.add_net_parameters(FyM.SlowFixedPointRepresentation())
 
-trainer = FyM.utils.Trainer.Trainer(handler, dataholder, opt_criterion, device, to_csv=True)
+trainer = FyM.utils.Trainer.Trainer(
+    handler, dataholder, opt_criterion, device, to_csv=True
+)
 
 
 def inference_train_with_grads():
