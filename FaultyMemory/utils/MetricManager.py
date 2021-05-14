@@ -71,6 +71,9 @@ class MetricManager:
         datapoints = self.average()
         if not Path(filename).exists():
             write_heads = True
+        else:
+            write_heads = False
+
         with open(filename, "a+") as f:
             writer = csv.writer(f)
             now = datetime.now()
