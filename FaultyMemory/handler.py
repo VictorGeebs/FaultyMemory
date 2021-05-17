@@ -14,6 +14,7 @@ from FaultyMemory.represented_tensor import (
 )
 from FaultyMemory.utils.misc import ten_exists
 from FaultyMemory.utils.Transfer import change_model_output
+from FaultyMemory.utils.Checkpoint import OUTPUT_SIZE_ALIAS
 
 from typing import Tuple, Union, Optional, Dict
 
@@ -262,14 +263,9 @@ class Handler:
         tensors_list = handler_dict["tensors"]
         loaded = {ten["name"]: construct_type(self.net, ten) for ten in tensors_list}
         if not purge:
-            self.represented_ten = {
-                **self.represented_ten,
-                **loaded,
-            }
+            self.represented_ten = self.represented_ten | loaded
         else:
-            self.represented_ten = {
-                **loaded,
-            }
+            self.represented_ten = loaded
 
         # Cluster assignement
         self.assign_clusters()  # TODO read and pass arg `clustering_criterion`
@@ -323,3 +319,6 @@ class Handler:
         """
         self.net = change_model_output(self.net, target_output_size, freeze_features)
         self.hot_reload()
+        for key in OUTPUT_SIZE_ALIAS:
+            if key in self.net._hyperparameters:
+                self.net._hyperparameters[key] = target_output_size

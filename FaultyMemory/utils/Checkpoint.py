@@ -2,7 +2,9 @@ import functools
 import inspect
 
 
-SKIP_LIST = ['progress', 'self']
+ARGS_SKIP_LIST = ['progress', 'self']
+OUTPUT_SIZE_ALIAS = ['num_classes']
+PRETRAINED_ALIAS = ['pretrained']
 
 
 def log_hyperparameters(method_or_class):
@@ -15,7 +17,7 @@ def log_hyperparameters(method_or_class):
             def __init__(self, *args, **kwargs) -> None:
                 argnames = method_or_class.__init__.__code__.co_varnames[1:method_or_class.__init__.__code__.co_argcount]
                 argnames = dict(zip(argnames, args))
-                [argnames.pop(k, None) for k in SKIP_LIST]
+                [argnames.pop(k, None) for k in ARGS_SKIP_LIST]
                 super().__init__(*args, **kwargs)
                 self._hyperparameters = {**argnames, **kwargs}
         return UpdatedCls
@@ -23,7 +25,7 @@ def log_hyperparameters(method_or_class):
         def updated_method(*args, **kwargs):
             argnames = method_or_class.__code__.co_varnames[:method_or_class.__code__.co_argcount]
             argnames = dict(zip(argnames, args))
-            [argnames.pop(k, None) for k in SKIP_LIST]
+            [argnames.pop(k, None) for k in ARGS_SKIP_LIST]
             res = method_or_class(*args, **kwargs)
             res._hyperparameters = {**argnames, **kwargs}
             return res
