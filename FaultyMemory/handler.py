@@ -27,6 +27,7 @@ class Handler:
     def __init__(self, net: torch.nn.Module, clusters: Optional[int] = 0):
         self.net = net
         self.represented_ten = {}
+        # TODO add all that can be FreebieQuantized to have a baseline energy
         self.clusters = Cluster(clusters)
 
     def __str__(self):  # pragma: no cover
