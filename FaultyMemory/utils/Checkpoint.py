@@ -2,9 +2,9 @@ import functools
 import inspect
 
 
-ARGS_SKIP_LIST = ['progress', 'self']
-OUTPUT_SIZE_ALIAS = ['num_classes']
-PRETRAINED_ALIAS = ['pretrained']
+ARGS_SKIP_LIST = ["progress", "self"]
+OUTPUT_SIZE_ALIAS = ["num_classes"]
+PRETRAINED_ALIAS = ["pretrained"]
 
 
 def log_hyperparameters(method_or_class):
