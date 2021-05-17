@@ -28,7 +28,7 @@ class DataHolder:
         self.batch_size = batch_size
         self.num_workers = num_workers
         _ = self.access_dataset()  # These ensures the dataset is available
-        _ = self.class_count()
+        _ = self.class_count
 
     def access_dataset(self) -> Tuple[Dataset, Dataset]:
         if not hasattr(self, "_dataset_cache"):
@@ -62,6 +62,7 @@ class DataHolder:
             ]
         )
 
+    @property
     def class_count(self) -> int:
         if self.name in DATASET_CLASS_COUNT:
             return DATASET_CLASS_COUNT[self.name]

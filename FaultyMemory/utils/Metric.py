@@ -19,7 +19,7 @@ class Metric:
         ), "This Metric applies to scalar only"
         self._hist.append(value)
         if len(self._hist) > self._max_history:
-            self._hist = self._hist[-self._max_history :]
+            self._hist = self._hist[-self._max_history:]
 
     def last(self):
         self.non_empty()

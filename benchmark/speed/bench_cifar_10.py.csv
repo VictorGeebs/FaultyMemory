@@ -2,3 +2,5 @@
 2021-05-07 15:13:01.814967,inference_train_without_grads,cuda,33.35296441428363
 2021-05-07 14:33:43.059540,inference_train_with_grads,cpu,430.0627527000015
 2021-05-07 14:51:23.037828,inference_train_without_grads,cpu,121.8884704000011
+2021-05-13 17:58:57.729583,inference_train_with_grads,cpu,427.3183067000027
+2021-05-13 18:16:20.066815,inference_train_without_grads,cpu,121.52082800000062

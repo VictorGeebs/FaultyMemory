@@ -13,6 +13,7 @@ from FaultyMemory.represented_tensor import (
     construct_type,
 )
 from FaultyMemory.utils.misc import ten_exists
+from FaultyMemory.utils.Transfer import change_model_output
 
 from typing import Tuple, Union, Optional, Dict
 
@@ -241,7 +242,12 @@ class Handler:
         with open(file_path, "w") as file:
             json.dump(self.to_dict(), file, indent="\t")
 
-    def from_dict(self, handler_dict):
+    def hot_reload(self):
+        """To call when some modifications are made to the current parts of the model."""
+        state = self.to_dict()
+        self.from_dict(state, True)
+
+    def from_dict(self, handler_dict, purge=False) -> None:
         """
         Loads a configuration from a dictionnary specifying the perturbations
         and representation of the entire network, modules or tensors\n
@@ -253,16 +259,21 @@ class Handler:
 
         # Represented tensors concat
         tensors_list = handler_dict["tensors"]
-
-        self.represented_ten = {
-            **self.represented_ten,
-            **{ten["name"]: construct_type(self.net, ten) for ten in tensors_list},
-        }
+        loaded = {ten["name"]: construct_type(self.net, ten) for ten in tensors_list}
+        if not purge:
+            self.represented_ten = {
+                **self.represented_ten,
+                **loaded,
+            }
+        else:
+            self.represented_ten = {
+                **loaded,
+            }
 
         # Cluster assignement
         self.assign_clusters()  # TODO read and pass arg `clustering_criterion`
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
         handler_dict = {
             "nb_clusters": self.clusters.nb_clusters,
             "tensors": [tensor.to_json() for _, tensor in self.represented_ten.items()],
@@ -300,3 +311,12 @@ class Handler:
         """
         energy = [t.energy_consumption() for t in self.represented_ten.values()]
         return sum([t[0] for t in energy]), sum([t[1] for t in energy])
+
+    def change_model_output(self, target_output_size: int, freeze_features=True) -> None:
+        """Change the model output size to `target_output_size`
+
+        Args:
+            target_output_size (int): [description]
+        """
+        self.net = change_model_output(self.net, target_output_size, freeze_features)
+        self.hot_reload()
