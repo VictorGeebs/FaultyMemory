@@ -53,15 +53,17 @@ class Trainer:
         if hasattr(self.handler.net._hyperparameters):
             hyperparameters = self.handler.net._hyperparameters
         else:
-            logger.warn('No hyperparameters were found on the network. '
-                        + 'Please use Checkpoint.log_hyperparameter class decorator on the network.')
+            logger.warn(
+                "No hyperparameters were found on the network. "
+                + "Please use Checkpoint.log_hyperparameter class decorator on the network."
+            )
             hyperparameters = {}
         return {
             "dataset": self.dataholder.name,
             "architecture": self.handler.net.__class__.__name__,
             "max_energy_consumption": max_energy,
             "current_energy_consumption": current_energy,
-            **hyperparameters
+            **hyperparameters,
         }
 
     def init_optimizer(self, optim_params: dict) -> None:
