@@ -32,7 +32,7 @@ def freeze(model: nn.Module):
 
 
 def unfreeze(model: nn.Module):
-    assert hasattr(model, '_unfreezed_state'), 'Cannot unfreeze what has not been'
+    assert hasattr(model, "_unfreezed_state"), "Cannot unfreeze what has not been"
     state = model._unfreezed_state
     for idx, param in enumerate(model.parameters()):
         param.requires_grad = state[idx]
