@@ -5,6 +5,9 @@ from FaultyMemory.utils.DataHolder import DataHolder
 from FaultyMemory.utils.accuracy import accuracy
 from FaultyMemory import Handler
 import torch
+import logging
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_OPT_PARAMS = {
     "lr": 0.1,
@@ -47,11 +50,18 @@ class Trainer:
     def _information(self):
         """If some information changes, this ensures its reflected."""
         max_energy, current_energy = self.handler.energy_consumption()
+        if hasattr(self.handler.net._hyperparameters):
+            hyperparameters = self.handler.net._hyperparameters
+        else:
+            logger.warn('No hyperparameters were found on the network. '
+                        + 'Please use Checkpoint.log_hyperparameter class decorator on the network.')
+            hyperparameters = {}
         return {
             "dataset": self.dataholder.name,
             "architecture": self.handler.net.__class__.__name__,
             "max_energy_consumption": max_energy,
             "current_energy_consumption": current_energy,
+            **hyperparameters
         }
 
     def init_optimizer(self, optim_params: dict) -> None:
@@ -148,3 +158,9 @@ class Trainer:
             self.training_update()
             self.train_loop()
             self.test_loop()
+
+    def save(self):
+        pass
+
+    def load(self):
+        pass

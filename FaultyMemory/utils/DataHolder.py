@@ -41,6 +41,7 @@ class DataHolder:
                 base(train=True, transform=self.transform_train(), **kwargs),
                 base(train=False, transform=self.transform_test(), **kwargs),
             )
+            self.dataset_sizes = tuple([len(x) for x in self._dataset_cache])
         return self._dataset_cache
 
     def transform_train(self):

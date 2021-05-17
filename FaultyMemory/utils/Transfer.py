@@ -1,6 +1,4 @@
 """Basics utils to transfer a NN to another dataset. Please consider carefully the effects."""
-from typing import Callable, Optional, Union
-import torch
 import torch.nn as nn
 
 
@@ -17,7 +15,7 @@ def change_model_output(
         )
         return nn.Sequential(*list(model.children())[:-1] + [ops_prime])
     else:
-        raise ValueError("Last ops is not supported yet")
+        raise ValueError(f"Last ops {type(ops)} is not supported yet")
 
 
 def freeze(model: nn.Module):
