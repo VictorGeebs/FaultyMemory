@@ -312,7 +312,9 @@ class Handler:
         energy = [t.energy_consumption() for t in self.represented_ten.values()]
         return sum([t[0] for t in energy]), sum([t[1] for t in energy])
 
-    def change_model_output(self, target_output_size: int, freeze_features=True) -> None:
+    def change_model_output(
+        self, target_output_size: int, freeze_features=True
+    ) -> None:
         """Change the model output size to `target_output_size`
 
         Args:
