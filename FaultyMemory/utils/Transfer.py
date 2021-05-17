@@ -6,7 +6,7 @@ def change_model_output(
     model: nn.Module, target_output_size: int, freeze_features=True
 ) -> nn.Module:
     """Replace latest ops of `model` output dimension with `target_output_size`."""
-    if freeze_features:
+    if freeze_features:  # Needs to happen before the last layer is replaced
         freeze(model)
     ops = list(model.children())[-1]
     if isinstance(ops, nn.Linear):
@@ -24,5 +24,15 @@ def freeze(model: nn.Module):
     Args:
         model (nn.Module): [description]
     """
+    state = []
     for param in model.parameters():
+        state.append(param.requires_grad)
         param.requires_grad = False
+    model._unfreezed_state = state
+
+
+def unfreeze(model: nn.Module):
+    assert hasattr(model, '_unfreezed_state'), 'Cannot unfreeze what has not been'
+    state = model._unfreezed_state
+    for idx, param in enumerate(model.parameters()):
+        param.requires_grad = state[idx]
