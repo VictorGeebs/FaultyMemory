@@ -25,11 +25,15 @@ class Handler:
     activation perturbations and clusters.
     """
 
-    def __init__(self, net: torch.nn.Module, clusters: Optional[int] = 0, param_dict: dict = None):
+    def __init__(
+        self, net: torch.nn.Module, clusters: Optional[int] = 0, param_dict: dict = None
+    ):
         self.net = net
         self.represented_ten = {}
         self.add_net_parameters(FreebieQuantization())
-        self.add_net_activations(FreebieQuantization())  # TODO a method to pick the fused activations
+        self.add_net_activations(
+            FreebieQuantization()
+        )  # TODO a method to pick the fused activations
         if param_dict is not None:
             self.from_dict(param_dict)
         self.clusters = Cluster(clusters)

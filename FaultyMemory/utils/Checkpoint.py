@@ -19,9 +19,9 @@ ARGS_SKIP_LIST = ["progress", "self"]
 OUTPUT_SIZE_ALIAS = ["num_classes"]
 PRETRAINED_ALIAS = ["pretrained"]
 
-CKPT_EXT = '.pthfaulty'
-CKPT_PREFIX = 'CKPT'
-META_FNAME = 'HPARAMS.yaml'
+CKPT_EXT = ".pthfaulty"
+CKPT_PREFIX = "CKPT"
+META_FNAME = "HPARAMS.yaml"
 
 
 def log_hyperparameters(method_or_class):
@@ -41,6 +41,7 @@ def log_hyperparameters(method_or_class):
                 [argnames.pop(k, None) for k in ARGS_SKIP_LIST]
                 super().__init__(*args, **kwargs)
                 self._hyperparameters = {**argnames, **kwargs}
+
         UpdatedCls._hparam_logger = True
         return UpdatedCls
     else:
@@ -54,6 +55,7 @@ def log_hyperparameters(method_or_class):
             res = method_or_class(*args, **kwargs)
             res._hyperparameters = {**argnames, **kwargs}
             return res
+
         updated_method._hparam_logger = True
         return updated_method
 
@@ -66,22 +68,28 @@ def get_default_hook(obj: Any, default_hooks: dict):
     return None
 
 
-def pytorch_load(torch_object: Callable, path: str, device: torch.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")):
+def pytorch_load(
+    torch_object: Callable,
+    path: str,
+    device: torch.device = torch.device("cuda" if torch.cuda.is_available() else "cpu"),
+):
     save = torch.load(path, map_location=device)
-    if not hasattr(torch_object, '_hparam_logger'):
+    if not hasattr(torch_object, "_hparam_logger"):
         torch_object = log_hyperparameters(torch_object)
     model = torch_object(**save["hparams"]).to(device)
     model.load_state_dict(save["model"])
     return model
 
 
-def pytorch_save(torch_object: Union[torch.nn.Module, torch.optim.Optimizer], path: str) -> dict:
-    save = {'hparams': {}}
-    if hasattr(torch_object, '_hyperparameters'):
-        save['hparams'] = torch_object._hyperparameters
-    save['model'] = torch_object.state_dict()
+def pytorch_save(
+    torch_object: Union[torch.nn.Module, torch.optim.Optimizer], path: str
+) -> dict:
+    save = {"hparams": {}}
+    if hasattr(torch_object, "_hyperparameters"):
+        save["hparams"] = torch_object._hyperparameters
+    save["model"] = torch_object.state_dict()
     torch.save(save, path)
-    return save['hparams']
+    return save["hparams"]
 
 
 DEFAULTS_SAVE = {
@@ -96,9 +104,7 @@ DEFAULTS_LOAD = {
 }
 
 
-Checkpoint = collections.namedtuple(
-    "Checkpoint", ["path", "meta", "paramfiles"]
-)
+Checkpoint = collections.namedtuple("Checkpoint", ["path", "meta", "paramfiles"])
 # Creating a hash allows making checkpoint sets
 Checkpoint.__hash__ = lambda self: hash(self.path)
 
@@ -129,31 +135,35 @@ class Checkpointer:
             ckpt_dir_extended = self._default_extended_path()
         else:
             ckpt_dir_extended = self.ckpt_dir / name
-        os.makedirs(ckpt_dir_extended)  
+        os.makedirs(ckpt_dir_extended)
         for name, obj in self.saveable.items():
-            path = ckpt_dir_extended / f'{CKPT_PREFIX}_{name}{CKPT_EXT}'
+            path = ckpt_dir_extended / f"{CKPT_PREFIX}_{name}{CKPT_EXT}"
             default_hook = get_default_hook(obj, DEFAULTS_SAVE)
             if default_hook is not None:
                 hparams = default_hook(obj, path)
                 extra_inf.update(hparams)
                 continue
             raise TypeError(f"No saving method for {type(obj)}")
-        self._save_meta(ckpt_dir_extended / f'{META_FNAME}', extra_inf)
+        self._save_meta(ckpt_dir_extended / f"{META_FNAME}", extra_inf)
 
     def _default_extended_path(self) -> pathlib.Path:
         # TODO check if already exists ?
         now = datetime.now().strftime("%d-%m-%y-%H-%M")
-        return self.ckpt_dir / f'{CKPT_PREFIX}_{now}'
+        return self.ckpt_dir / f"{CKPT_PREFIX}_{now}"
 
     def _save_meta(self, path: pathlib.Path, extra_inf: dict = {}) -> None:
-        meta = {'time': datetime.now(), **extra_inf}
+        meta = {"time": datetime.now(), **extra_inf}
         with open(path, "w") as fo:
             fo.write("# yamllint disable\n")
             fo.write(yaml.dump(meta))
 
     # LOAD THINGIES
     def list_ckpt(self) -> List[Checkpoint]:
-        return [self._construct_ckpt_objects(x) for x in self.ckpt_dir.iterdir() if Checkpointer.is_ckpt_dir(pathlib.Path(x))]
+        return [
+            self._construct_ckpt_objects(x)
+            for x in self.ckpt_dir.iterdir()
+            if Checkpointer.is_ckpt_dir(pathlib.Path(x))
+        ]
 
     @staticmethod
     def is_ckpt_dir(path: pathlib.Path) -> bool:
@@ -174,8 +184,6 @@ class Checkpointer:
             if ckptfile.suffix == CKPT_EXT:
                 paramfiles[ckptfile.stem] = ckptfile
         return Checkpoint(ckpt_dir, meta, paramfiles)
-
-
 
 
 # import torch.nn as nn
