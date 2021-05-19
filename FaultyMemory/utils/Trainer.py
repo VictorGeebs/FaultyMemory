@@ -162,9 +162,7 @@ class Trainer:
             self.test_loop()
 
     def save(self):
-        # TODO : NN et ses hyperparams, handler
         pass
 
     def load(self):
-        # TODO : NN et ses hyperparams, handler, pretrained alias == non si y'a une save locale
         pass

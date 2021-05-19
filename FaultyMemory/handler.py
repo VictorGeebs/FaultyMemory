@@ -6,7 +6,7 @@ from tabulate import tabulate
 
 from FaultyMemory.cluster import Cluster
 from FaultyMemory.perturbator import Perturbator
-from FaultyMemory.representation import Representation
+from FaultyMemory.representation import FreebieQuantization, Representation
 from FaultyMemory.represented_tensor import (
     RepresentedParameter,
     RepresentedActivation,
@@ -25,10 +25,13 @@ class Handler:
     activation perturbations and clusters.
     """
 
-    def __init__(self, net: torch.nn.Module, clusters: Optional[int] = 0):
+    def __init__(self, net: torch.nn.Module, clusters: Optional[int] = 0, param_dict: dict = None):
         self.net = net
         self.represented_ten = {}
-        # TODO add all that can be FreebieQuantized to have a baseline energy
+        self.add_net_parameters(FreebieQuantization())
+        self.add_net_activations(FreebieQuantization())  # TODO a method to pick the fused activations
+        if param_dict is not None:
+            self.from_dict(param_dict)
         self.clusters = Cluster(clusters)
 
     def __str__(self):  # pragma: no cover
@@ -235,14 +238,21 @@ class Handler:
         """
         Creates a handler dictionnary from a json file and initializes the handler to that configuration
         """
+        self.from_dict(Handler.dict_from_json(file_path))
+
+    @staticmethod
+    def dict_from_json(file_path: str):
         with open(file_path) as file:
             jsonstr = file.read()
-            handler_dict = json.loads(jsonstr)
-            self.from_dict(handler_dict)
+        return json.loads(jsonstr)
+
+    @staticmethod
+    def dict_to_json(file_path: str, param_dict: dict):
+        with open(file_path, "w") as file:
+            json.dump(param_dict, file, indent="\t")
 
     def to_json(self, file_path):
-        with open(file_path, "w") as file:
-            json.dump(self.to_dict(), file, indent="\t")
+        Handler.dict_to_json(file_path, self.to_dict())
 
     def hot_reload(self):
         """To call when some modifications are made to the current parts of the model."""
