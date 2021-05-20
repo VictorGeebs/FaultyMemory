@@ -14,7 +14,7 @@ from FaultyMemory.represented_tensor import (
 )
 from FaultyMemory.utils.misc import ten_exists
 from FaultyMemory.utils.Transfer import change_model_output
-from FaultyMemory.utils.Checkpoint import OUTPUT_SIZE_ALIAS
+from FaultyMemory.utils.log_hparams import OUTPUT_SIZE_ALIAS
 
 from typing import Tuple, Union, Optional, Dict
 
