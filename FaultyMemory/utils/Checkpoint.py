@@ -15,9 +15,9 @@ from typing import Any, Callable, List, Union
 from datetime import datetime
 
 
-CKPT_EXT = '.pthfaulty'
-CKPT_PREFIX = 'CKPT'
-META_FNAME = 'HPARAMS.yaml'
+CKPT_EXT = ".pthfaulty"
+CKPT_PREFIX = "CKPT"
+META_FNAME = "HPARAMS.yaml"
 
 
 def get_default_hook(obj: Any, default_hooks: dict):
