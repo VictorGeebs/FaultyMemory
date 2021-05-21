@@ -280,7 +280,7 @@ class Handler:
         tensors_list = handler_dict["tensors"]
         loaded = {ten["name"]: construct_type(self.net, ten) for ten in tensors_list}
         if not purge:
-            self.represented_ten = self.represented_ten | loaded
+            self.represented_ten |= loaded
         else:
             self.represented_ten = loaded
 

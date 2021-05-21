@@ -52,7 +52,7 @@ def pytorch_save(
     return save["hparams"]
 
 
-Dependancy = collections.namedtuple("Dependancy", ["class", "reqs"])
+Dependency = collections.namedtuple("Dependancy", ["class", "reqs"])
 
 
 DEFAULTS_SAVE = {
@@ -61,9 +61,9 @@ DEFAULTS_SAVE = {
     FaultyMemory.Handler: Handler.dict_to_json,
 }
 DEFAULTS_LOAD = {
-    torch.nn.Module: Dependancy(pytorch_load, []),
-    torch.optim.Optimizer: Dependancy(pytorch_load, [torch.nn.Module]),
-    FaultyMemory.Handler: Dependancy(Handler.dict_from_json, [torch.nn.Module]),
+    torch.nn.Module: Dependency(pytorch_load, []),
+    torch.optim.Optimizer: Dependency(pytorch_load, [torch.nn.Module]),
+    FaultyMemory.Handler: Dependency(Handler.dict_from_json, [torch.nn.Module]),
 }
 
 
