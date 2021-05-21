@@ -18,10 +18,10 @@ class DependencySolver:
         Returns:
             list: [description]
         """
-        assert self._constraint_satisfiable(), 'Some constraint could not be verified'
+        assert self._constraint_satisfiable(), "Some constraint could not be verified"
         satisfied, res = [], []
         to_empty = copy.deepcopy(self._items)
-        while(len(to_empty) > 0):
+        while len(to_empty) > 0:
             next_rank = self._next_rank(satisfied)
             satisfied.append(self._mro_satisfied(next_rank))
             [to_empty.pop(x) for x in next_rank]
