@@ -6,6 +6,8 @@ from FaultyMemory.utils.Checkpoint import Dependency
 
 class DependencySolver:
     def __init__(self):
+        """Take a dict of Dependency and generate an ordered list of these dependency.
+        """
         self._items = {}
 
     def add_item(self, depending_class: Callable, dep_descr: Dependency):
