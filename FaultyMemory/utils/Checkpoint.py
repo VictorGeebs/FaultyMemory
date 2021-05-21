@@ -55,9 +55,7 @@ def pytorch_load(
     return torch_object
 
 
-def pytorch_save(
-    torch_object: TORCH_RECOVERABLE, path: str
-) -> dict:
+def pytorch_save(torch_object: TORCH_RECOVERABLE, path: str) -> dict:
     save = {"hparams": {}}
     if hasattr(torch_object, "_hyperparameters"):
         save["hparams"] = torch_object._hyperparameters
@@ -171,9 +169,12 @@ class Checkpointer:
             elif default_hook is not None:  # assume its dependency
                 deps.register_item(item, default_hook, loadpath)
             # If we got here, no custom hook or registered default hook exists
-            raise RuntimeError(f"Don't know how to load {type(item)}. Register default hook \
-                    or add custom hook for this object.")
+            raise RuntimeError(
+                f"Don't know how to load {type(item)}. Register default hook \
+                    or add custom hook for this object."
+            )
         deps.process()
+
 
 # import torch.nn as nn
 # import torchvision
