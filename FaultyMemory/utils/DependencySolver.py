@@ -6,8 +6,7 @@ from FaultyMemory.utils.Checkpoint import Dependency
 
 class DependencySolver:
     def __init__(self):
-        """Take a dict of Dependency and generate an ordered list of these dependency.
-        """
+        """Take a dict of Dependency and generate an ordered list of these dependency."""
         self._items = {}
 
     def add_item(self, depending_class: Callable, dep_descr: Dependency):
@@ -19,9 +18,9 @@ class DependencySolver:
         Returns:
             list: [description]
         """
-        assert self._constraint_satisfiable(), 'Some constraint could not be verified'
+        assert self._constraint_satisfiable(), "Some constraint could not be verified"
         satisfied, res = set(), []
-        while(len(res) != len(self._items)):
+        while len(res) != len(self._items):
             next_rank = self._next_rank(satisfied, res)
             satisfied.union(self._mro_satisfied(next_rank))
             res.append(next_rank)
