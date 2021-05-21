@@ -1,30 +1,44 @@
 """If some classes depends on another, we need to know the dependency tree."""
 import inspect
-from typing import Callable
-from FaultyMemory.utils.Checkpoint import Dependency
+import copy
+import collections
+from typing import Any
+
+
+Dependency = collections.namedtuple("Dependancy", ["build_class", "reqs"])
 
 
 class DependencySolver:
     def __init__(self):
         """Take a dict of Dependency and generate an ordered list of these dependency."""
         self._items = {}
+        self._solved = set()
 
-    def add_item(self, depending_class: Callable, dep_descr: Dependency):
+    def register_item(self, depending_class: Any, dep_descr: Dependency, loadpath: str):
+        dep_descr._loadpath = loadpath
         self._items.update({depending_class: dep_descr})
 
+    def add_solved(self, solved: Any):
+        solved = inspect.getmro(solved)
+        self._solved.union(set(solved))
+
     def build_dep(self) -> list:
-        """Return an ordered list of the classes to call in order to respect dependancies.
+        """Return an ordered list of the Dependencies to call in order.
 
         Returns:
             list: [description]
         """
         assert self._constraint_satisfiable(), "Some constraint could not be verified"
-        satisfied, res = set(), []
+        satisfied, res = copy.deepcopy(self._solved), []
         while len(res) != len(self._items):
             next_rank = self._next_rank(satisfied, res)
             satisfied.union(self._mro_satisfied(next_rank))
             res.append(next_rank)
         return res
+
+    def solve(self):
+        for key in self.build_dep():
+            self._items[key].build_class(key, self._items[key]._loadpath)
 
     def _constraint_satisfiable(self) -> bool:
         mro, reqs = set(), set()

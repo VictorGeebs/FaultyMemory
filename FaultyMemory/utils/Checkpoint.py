@@ -2,6 +2,7 @@
 
 Kudos to the clever SpeechBrain gang https://github.com/speechbrain from where lots of good design ideas/practices were snatched.
 """
+from FaultyMemory.utils.DependencySolver import DependencySolver, Dependency
 from FaultyMemory.handler import Handler
 import collections
 import inspect
@@ -18,6 +19,7 @@ from datetime import datetime
 CKPT_EXT = ".pthfaulty"
 CKPT_PREFIX = "CKPT"
 META_FNAME = "HPARAMS.yaml"
+TORCH_RECOVERABLE = Union[torch.nn.Module, torch.optim.Optimizer]
 
 
 def get_default_hook(obj: Any, default_hooks: dict):
@@ -29,20 +31,32 @@ def get_default_hook(obj: Any, default_hooks: dict):
 
 
 def pytorch_load(
-    torch_object: Callable,
+    torch_object: Union[Callable, TORCH_RECOVERABLE],
     path: str,
     device: torch.device = torch.device("cuda" if torch.cuda.is_available() else "cpu"),
-):
+) -> TORCH_RECOVERABLE:
+    """Can instantiate or load on an existing instance.
+
+    Args:
+        torch_object (Union[Callable]): [description]
+        path (str): [description]
+        device (torch.device, optional): [description]. Defaults to torch.device("cuda" if torch.cuda.is_available() else "cpu").
+
+    Returns:
+        [type]: [description]
+    """
     save = torch.load(path, map_location=device)
-    if not hasattr(torch_object, "_hparam_logger"):
-        torch_object = log_hyperparameters(torch_object)
-    model = torch_object(**save["hparams"]).to(device)
-    model.load_state_dict(save["model"])
-    return model
+    if type(torch_object) not in TORCH_RECOVERABLE:
+        # Need to instantiate
+        if not hasattr(torch_object, "_hparam_logger"):
+            torch_object = log_hyperparameters(torch_object)
+        torch_object = torch_object(**save["hparams"]).to(device)
+    torch_object.load_state_dict(save["model"])
+    return torch_object
 
 
 def pytorch_save(
-    torch_object: Union[torch.nn.Module, torch.optim.Optimizer], path: str
+    torch_object: TORCH_RECOVERABLE, path: str
 ) -> dict:
     save = {"hparams": {}}
     if hasattr(torch_object, "_hyperparameters"):
@@ -52,18 +66,15 @@ def pytorch_save(
     return save["hparams"]
 
 
-Dependency = collections.namedtuple("Dependancy", ["class", "reqs"])
-
-
 DEFAULTS_SAVE = {
     torch.nn.Module: pytorch_save,
     torch.optim.Optimizer: pytorch_save,
-    FaultyMemory.Handler: Handler.dict_to_json,
+    FaultyMemory.Handler: Handler.to_json,
 }
 DEFAULTS_LOAD = {
-    torch.nn.Module: Dependency(pytorch_load, []),
+    torch.nn.Module: pytorch_load,
     torch.optim.Optimizer: Dependency(pytorch_load, [torch.nn.Module]),
-    FaultyMemory.Handler: Dependency(Handler.dict_from_json, [torch.nn.Module]),
+    FaultyMemory.Handler: Dependency(Handler.from_json, [torch.nn.Module]),
 }
 
 
@@ -148,6 +159,21 @@ class Checkpointer:
                 paramfiles[ckptfile.stem] = ckptfile
         return Checkpoint(ckpt_dir, meta, paramfiles)
 
+    def load_ckpt(self, ckpt: Checkpoint):
+        deps = DependencySolver()
+        for name, item in self.saveable.items():
+            loadpath = ckpt.paramfiles[name]
+            default_hook = get_default_hook(item, DEFAULTS_LOAD)
+            if default_hook is not None and type(default_hook) is not Dependency:
+                default_hook(item, loadpath)
+                deps.add_solved(item)
+                continue
+            elif default_hook is not None:  # assume its dependency
+                deps.register_item(item, default_hook, loadpath)
+            # If we got here, no custom hook or registered default hook exists
+            raise RuntimeError(f"Don't know how to load {type(item)}. Register default hook \
+                    or add custom hook for this object.")
+        deps.process()
 
 # import torch.nn as nn
 # import torchvision
