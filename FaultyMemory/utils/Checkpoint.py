@@ -52,15 +52,18 @@ def pytorch_save(
     return save["hparams"]
 
 
+Dependancy = collections.namedtuple("Dependancy", ["class", "reqs"])
+
+
 DEFAULTS_SAVE = {
     torch.nn.Module: pytorch_save,
     torch.optim.Optimizer: pytorch_save,
     FaultyMemory.Handler: Handler.dict_to_json,
 }
 DEFAULTS_LOAD = {
-    torch.nn.Module: pytorch_load,
-    torch.optim.Optimizer: pytorch_load,
-    FaultyMemory.Handler: Handler.dict_from_json,
+    torch.nn.Module: Dependancy(pytorch_load, []),
+    torch.optim.Optimizer: Dependancy(pytorch_load, [torch.nn.Module]),
+    FaultyMemory.Handler: Dependancy(Handler.dict_from_json, [torch.nn.Module]),
 }
 
 
@@ -135,7 +138,7 @@ class Checkpointer:
 
     @staticmethod
     def _construct_ckpt_objects(ckpt_dir: str) -> Checkpoint:
-        # This internal method takes a list of individual checkpoint
+        # This internal method takes individual checkpoint
         # directory paths (as produced by _list_checkpoint_dirs)
         with open(ckpt_dir / META_FNAME) as fi:
             meta = yaml.load(fi, Loader=yaml.Loader)

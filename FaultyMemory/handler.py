@@ -198,7 +198,7 @@ class Handler:
         ten_exists(net_dict, name)
         module = net_dict[name]
         [
-            self.add_tensor(f"{name}.{param_key}", representation, perturb)
+            self.add_parameter(f"{name}.{param_key}", representation, perturb)
             for param_key, _ in module.named_parameters()
         ]
 
@@ -236,7 +236,10 @@ class Handler:
         ]
 
     def remove_net_activations(self):
-        _ = [self.remove_activation(module) for module, _ in self.net.named_modules()]
+        _ = [self.remove_tensor(module) for module, _ in self.net.named_modules()]
+
+    def purge(self):
+        self.represented_ten.clear()
 
     def from_json(self, file_path):
         """
