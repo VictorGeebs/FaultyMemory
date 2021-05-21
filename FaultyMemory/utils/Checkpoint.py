@@ -115,7 +115,7 @@ class Checkpointer:
             default_hook = get_default_hook(obj, DEFAULTS_SAVE)
             if default_hook is not None:
                 hparams = default_hook(obj, path)
-                extra_inf.update(hparams)
+                extra_inf.update({name: hparams})
                 continue
             raise TypeError(f"No saving method for {type(obj)}")
         self._save_meta(ckpt_dir_extended / f"{META_FNAME}", extra_inf)
