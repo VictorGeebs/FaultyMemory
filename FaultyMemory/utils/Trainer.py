@@ -50,8 +50,8 @@ class Trainer:
     def _information(self):
         """If some information changes, this ensures its reflected."""
         max_energy, current_energy = self.handler.energy_consumption()
-        
-        if hasattr(self.handler.net._hyperparameters):  
+
+        if hasattr(self.handler.net._hyperparameters):
             hyperparameters = self.handler.net._hyperparameters
         else:
             logger.warn(
@@ -60,7 +60,7 @@ class Trainer:
             )
             hyperparameters = {}
 
-        if hasattr(self.optimizer._hyperparameters):  #TODO add optimizer
+        if hasattr(self.optimizer._hyperparameters):  # TODO add optimizer
             hyperparameters |= self.optimizer._hyperparameters
         else:
             logger.warn(
