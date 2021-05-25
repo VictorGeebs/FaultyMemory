@@ -87,7 +87,14 @@ class Checkpointer:
         os.makedirs(self.ckpt_dir, exist_ok=True)
         self.saveable = {}
         for key, value in saveable_dict.items():
-            self.saveable[key] = value
+            self.add_saveable(key, value)
+
+    def add_saveable(self, name: str, item: Any):
+        assert name not in self.saveable, 'Trying to add twice the same saveable'
+        self.saveable[name] = item
+        if hasattr(item, '_saveable_dict'):
+            for key, value in item._saveable_dict.items():
+                self.add_saveable(key, value)
 
     # SAVE THINGIES
     def save_checkpt(self, name: str = None, extra_inf: dict = {}) -> None:
@@ -168,12 +175,13 @@ class Checkpointer:
                 continue
             elif default_hook is not None:  # assume its dependency
                 deps.register_item(item, default_hook, loadpath)
+                continue
             # If we got here, no custom hook or registered default hook exists
             raise RuntimeError(
                 f"Don't know how to load {type(item)}. Register default hook \
                     or add custom hook for this object."
             )
-        deps.process()
+        deps.solve()
 
 
 # import torch.nn as nn
