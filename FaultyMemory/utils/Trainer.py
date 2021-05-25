@@ -50,14 +50,24 @@ class Trainer:
     def _information(self):
         """If some information changes, this ensures its reflected."""
         max_energy, current_energy = self.handler.energy_consumption()
-        if hasattr(self.handler.net._hyperparameters):
+        
+        if hasattr(self.handler.net._hyperparameters):  
             hyperparameters = self.handler.net._hyperparameters
         else:
             logger.warn(
                 "No hyperparameters were found on the network. "
-                + "Please use Checkpoint.log_hyperparameter class decorator on the network."
+                + "Please use log_hyperparameter class decorator on the network."
             )
             hyperparameters = {}
+
+        if hasattr(self.optimizer._hyperparameters):  #TODO add optimizer
+            hyperparameters |= self.optimizer._hyperparameters
+        else:
+            logger.warn(
+                "No hyperparameters were found on the optimizer. "
+                + "Please use log_hyperparameter class decorator on the network."
+            )
+
         return {
             "dataset": self.dataholder.name,
             "architecture": self.handler.net.__class__.__name__,
