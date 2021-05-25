@@ -90,9 +90,9 @@ class Checkpointer:
             self.add_saveable(key, value)
 
     def add_saveable(self, name: str, item: Any):
-        assert name not in self.saveable, 'Trying to add twice the same saveable'
+        assert name not in self.saveable, "Trying to add twice the same saveable"
         self.saveable[name] = item
-        if hasattr(item, '_saveable_dict'):
+        if hasattr(item, "_saveable_dict"):
             for key, value in item._saveable_dict.items():
                 self.add_saveable(key, value)
 
