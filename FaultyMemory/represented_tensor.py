@@ -19,6 +19,9 @@ from abc import ABC, abstractclassmethod
 TYPE_DICT = {}
 
 
+logger = logging.getLogger(__name__)
+
+
 def add_type(func):
     TYPE_DICT[func.__name__] = func
     return func
@@ -204,9 +207,12 @@ class RepresentedTensor(ABC):
         self.access_ten_after(func, name="compute_bitcount", autoremove=True)
 
     def energy_consumption(self, a=12.8) -> Tuple[int, float]:
-        assert (
-            "bitcount" in self.tensor_stats.keys()
-        ), "Bitcount has not been set in `compute_bitcount`"
+        if "bitcount" not in self.tensor_stats.keys():
+            logger.warning(f"Bitcount of {self.name} has not been set in `compute_bitcount`\
+                        Bitcount is set to default = 0.")
+            bitcount = 0
+        else:
+            bitcount = self.tensor_stats["bitcount"]
 
         def energy_formula(p):
             return -np.log(p) / a if (p > 0) & (p < 0.5) else 1 if p <= 0 else 0
@@ -218,14 +224,15 @@ class RepresentedTensor(ABC):
             else:
                 current_consumption = np.average([energy_formula(pi) for pi in p])
         else:
-            print(
-                "There are no consumption model other than for BernoulliXORPerturbation yet"
+            logger.warning(
+                f"There are no consumption model other than for BernoulliXORPerturbation yet.\
+                Consumption of {self.name} is set to default = 1."
             )
             current_consumption = 1
 
         return (
-            self.tensor_stats["bitcount"],
-            self.tensor_stats["bitcount"] * current_consumption,
+            bitcount,
+            bitcount * current_consumption,
         )
 
     def quantize_mse(self) -> None:
@@ -234,8 +241,6 @@ class RepresentedTensor(ABC):
         """
 
         def func(self, output) -> None:
-            print(f"in mse {output}")
-            print(self.saved_ten)
             ten = self.saved_ten.to(output)
             loss = nn.MSELoss().to(output)
             self.tensor_stats["MSE"] = loss(output, ten).item()

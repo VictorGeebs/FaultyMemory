@@ -28,6 +28,13 @@ class Handler:
     def __init__(
         self, net: torch.nn.Module, clusters: Optional[int] = 0, param_dict: dict = None
     ):
+        """A manager for neural net quantization on faulty hardware.
+
+        Args:
+            net (torch.nn.Module): the target net
+            clusters (Optional[int], optional): [description]. Defaults to 0.
+            param_dict (dict, optional): [description]. Defaults to None.
+        """
         self.net = net
         self.represented_ten = {}
         self.add_net_parameters(FreebieQuantization())
@@ -313,10 +320,10 @@ class Handler:
         self.clusters.assign_perts(filtered_perts)
         self.clusters.cluster()
 
-    def train(self) -> None:
+    def train(self) -> None:  # pragma: no-cover
         self.net.train()
 
-    def eval(self) -> None:
+    def eval(self) -> None:  # pragma: no-cover
         self.net.eval()
 
     def energy_consumption(self) -> Tuple[int, float]:
