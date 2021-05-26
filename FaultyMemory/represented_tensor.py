@@ -208,8 +208,10 @@ class RepresentedTensor(ABC):
 
     def energy_consumption(self, a=12.8) -> Tuple[int, float]:
         if "bitcount" not in self.tensor_stats.keys():
-            logger.warning(f"Bitcount of {self.name} has not been set in `compute_bitcount`\
-                        Bitcount is set to default = 0.")
+            logger.warning(
+                f"Bitcount of {self.name} has not been set in `compute_bitcount`\
+                        Bitcount is set to default = 0."
+            )
             bitcount = 0
         else:
             bitcount = self.tensor_stats["bitcount"]

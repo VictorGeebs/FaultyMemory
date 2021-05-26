@@ -17,4 +17,3 @@ def simple_handler() -> FyM.Handler:
 def test_unparameterized_handler(simple_handler):
     e_max, e = simple_handler.energy_consumption()
     assert e_max == e == 176
-
