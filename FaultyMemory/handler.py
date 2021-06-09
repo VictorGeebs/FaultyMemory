@@ -180,7 +180,7 @@ class Handler:
         perturb: Optional[Union[Dict, Perturbator]] = None,
     ) -> None:
         if name in self.represented_ten:
-            logger.warn(f"{name} already saved !")
+            logger.info(f"{name} already saved, replacing it")
         self.represented_ten[name] = RepresentedParameter(
             self.net, name, representation, perturb
         )
@@ -192,7 +192,7 @@ class Handler:
         perturb: Optional[Union[Dict, Perturbator]] = None,
     ):
         if name in self.represented_ten:
-            logger.warn(f"{name} already saved !")
+            logger.info(f"{name} already saved, replacing it")
         self.represented_ten[name] = RepresentedActivation(
             self.net, name, representation, perturb
         )
