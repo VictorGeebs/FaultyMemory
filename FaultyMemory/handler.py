@@ -1,5 +1,6 @@
 import json
 import torch
+import logging
 import multiprocessing as mp
 
 from tabulate import tabulate
