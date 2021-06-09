@@ -19,6 +19,9 @@ from FaultyMemory.utils.log_hparams import OUTPUT_SIZE_ALIAS
 from typing import Tuple, Union, Optional, Dict
 
 
+logger = logging.getLogger(__name__)
+
+
 class Handler:
     r"""
     Class in charge of saving tensors, storing information about them,
@@ -176,7 +179,8 @@ class Handler:
         representation: Representation,
         perturb: Optional[Union[Dict, Perturbator]] = None,
     ) -> None:
-        assert name not in self.represented_ten, f"{name} already saved !"
+        if name in self.represented_ten:
+            logger.warn(f"{name} already saved !")
         self.represented_ten[name] = RepresentedParameter(
             self.net, name, representation, perturb
         )
@@ -187,7 +191,8 @@ class Handler:
         representation: Representation,
         perturb: Optional[Union[Dict, Perturbator]] = None,
     ):
-        assert name not in self.represented_ten
+        if name in self.represented_ten:
+            logger.warn(f"{name} already saved !")
         self.represented_ten[name] = RepresentedActivation(
             self.net, name, representation, perturb
         )
