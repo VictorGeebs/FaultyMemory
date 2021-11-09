@@ -40,7 +40,9 @@ class Perturbator(ABC):
                 if self.width_correction == 0
                 else torch.Size(list(tensor.size()) + [self.width_correction])
             )
-            sample = self.distribution.sample(sample_shape=sample_shape).to(tensor.device) #TODO puts args on device rather than transfer generated 
+            sample = self.distribution.sample(sample_shape=sample_shape).to(
+                tensor.device
+            )  # TODO puts args on device rather than transfer generated
             self.sample_log_probs = -self.distribution.log_prob(sample)
             sample = self.handle_sample(sample, reduce=(sample.shape != tensor.shape))
             assert (
